@@ -1,22 +1,26 @@
 #![allow(clippy::type_complexity)]
 
 mod actions;
+mod attributes;
 mod audio;
+mod castle;
+mod debug;
 mod loading;
 mod menu;
-mod player;
 mod units;
 
 use crate::actions::ActionsPlugin;
 use crate::audio::InternalAudioPlugin;
+use crate::castle::CastlePlugin;
 use crate::loading::LoadingPlugin;
 use crate::menu::MenuPlugin;
-use crate::player::PlayerPlugin;
 
+use attributes::AttributesPlugin;
 use bevy::app::App;
 #[cfg(debug_assertions)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
+use debug::DebugPlugin;
 use units::UnitPluging;
 
 // This example game uses States to separate logic
@@ -42,8 +46,10 @@ impl Plugin for GamePlugin {
             MenuPlugin,
             ActionsPlugin,
             InternalAudioPlugin,
-            PlayerPlugin,
+            CastlePlugin,
             UnitPluging,
+            AttributesPlugin,
+            DebugPlugin,
         ));
 
         #[cfg(debug_assertions)]
