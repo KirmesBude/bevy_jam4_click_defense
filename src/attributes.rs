@@ -11,7 +11,7 @@ impl Plugin for AttributesPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ApplyHealthDelta>().add_systems(
             Update,
-            apply_health_delta.run_if(in_state(GameState::Playing)),
+            (apply_health_delta, die).run_if(in_state(GameState::Playing)),
         );
     }
 }
@@ -44,13 +44,24 @@ pub struct ApplyHealthDelta {
     pub delta: f32,
 }
 
-pub fn apply_health_delta(
+fn apply_health_delta(
     mut applyhealthdelta_evr: EventReader<ApplyHealthDelta>,
     mut health_query: Query<&mut Health>,
 ) {
     for ev in applyhealthdelta_evr.read() {
         if let Ok(mut health) = health_query.get_mut(ev.entity) {
             health.apply(ev.delta);
+        }
+    }
+}
+
+fn die(
+    mut commands: Commands,
+    health_query: Query<(Entity, &Health), Changed<Health>>,
+) {
+    for (entity, health) in &health_query {
+        if health.current == 0.0 {
+            commands.entity(entity).despawn();
         }
     }
 }

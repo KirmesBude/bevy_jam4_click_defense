@@ -20,6 +20,7 @@ use bevy::app::App;
 #[cfg(debug_assertions)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
+use bevy_xpbd_2d::{plugins::{PhysicsPlugins, PhysicsDebugPlugin}, resources::Gravity};
 use debug::DebugPlugin;
 use units::UnitPluging;
 
@@ -50,7 +51,9 @@ impl Plugin for GamePlugin {
             UnitPluging,
             AttributesPlugin,
             DebugPlugin,
-        ));
+            PhysicsPlugins::default(),
+            PhysicsDebugPlugin::default(),
+        )).insert_resource(Gravity::ZERO);
 
         #[cfg(debug_assertions)]
         {
