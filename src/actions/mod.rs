@@ -23,12 +23,12 @@ impl Plugin for ActionsPlugin {
 
 #[derive(Debug, Event)]
 pub struct SpawnEnemy {
-    translation: Vec3,
+    pub translation: Vec3,
 }
 
 #[derive(Debug, Event)]
 pub struct SpawnAlly {
-    translation: Vec3,
+    pub translation: Vec3,
 }
 
 /* TODO: Touch Controls */
