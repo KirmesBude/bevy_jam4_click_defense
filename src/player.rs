@@ -1,4 +1,3 @@
-use crate::actions::Actions;
 use crate::loading::TextureAssets;
 use crate::GameState;
 use bevy::prelude::*;
@@ -29,9 +28,9 @@ fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {
 
 fn move_player(
     time: Res<Time>,
-    actions: Res<Actions>,
     mut player_query: Query<&mut Transform, With<Player>>,
 ) {
+    /*
     if actions.player_movement.is_none() {
         return;
     }
@@ -44,4 +43,5 @@ fn move_player(
     for mut player_transform in &mut player_query {
         player_transform.translation += movement;
     }
+    */
 }

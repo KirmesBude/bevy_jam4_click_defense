@@ -1,13 +1,10 @@
-use bevy::math::Vec3Swizzles;
+use bevy::input::mouse::MouseButtonInput;
 use bevy::prelude::*;
 
-use crate::actions::game_control::{get_movement, GameControl};
-use crate::player::Player;
+use crate::actions::game_control::viewport_to_world_position;
 use crate::GameState;
 
 mod game_control;
-
-pub const FOLLOW_EPSILON: f32 = 5.;
 
 pub struct ActionsPlugin;
 
@@ -15,46 +12,51 @@ pub struct ActionsPlugin;
 // Actions can then be used as a resource in other systems to act on the player input.
 impl Plugin for ActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Actions>().add_systems(
+        app.add_event::<SpawnEnemy>()
+            .add_event::<SpawnAlly>()
+            .add_systems(
             Update,
-            set_movement_actions.run_if(in_state(GameState::Playing)),
+            emit_spawn_action.run_if(in_state(GameState::Playing)),
         );
     }
 }
 
-#[derive(Default, Resource)]
-pub struct Actions {
-    pub player_movement: Option<Vec2>,
+#[derive(Debug, Event)]
+pub struct SpawnEnemy {
+    translation: Vec3,
 }
 
-pub fn set_movement_actions(
-    mut actions: ResMut<Actions>,
-    keyboard_input: Res<Input<KeyCode>>,
-    touch_input: Res<Touches>,
-    player: Query<&Transform, With<Player>>,
-    camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
-) {
-    let mut player_movement = Vec2::new(
-        get_movement(GameControl::Right, &keyboard_input)
-            - get_movement(GameControl::Left, &keyboard_input),
-        get_movement(GameControl::Up, &keyboard_input)
-            - get_movement(GameControl::Down, &keyboard_input),
-    );
+#[derive(Debug, Event)]
+pub struct SpawnAlly {
+    translation: Vec3,
+}
 
-    if let Some(touch_position) = touch_input.first_pressed_position() {
-        let (camera, camera_transform) = camera.single();
-        if let Some(touch_position) = camera.viewport_to_world_2d(camera_transform, touch_position)
-        {
-            let diff = touch_position - player.single().translation.xy();
-            if diff.length() > FOLLOW_EPSILON {
-                player_movement = diff.normalize();
+/* TODO: Touch Controls */
+pub fn emit_spawn_action(
+    mut mousebtn_evr: EventReader<MouseButtonInput>,
+    mut spawnally_evw: EventWriter<SpawnAlly>,
+    mut spawnenemy_evw: EventWriter<SpawnEnemy>,
+    windows: Query<&Window>,
+    cameras: Query<(&Camera, &GlobalTransform)>,
+) {
+    use bevy::input::ButtonState;
+
+    for ev in mousebtn_evr.read() {
+        if ev.state == ButtonState::Pressed {
+            let window = windows.get(ev.window).unwrap();
+            let (camera, camera_transform) = cameras.get_single().unwrap();
+            let world_position = viewport_to_world_position(window, camera, camera_transform).unwrap();
+            info!("{}", world_position);
+
+            match ev.button {
+                MouseButton::Left => {
+                    spawnally_evw.send(SpawnAlly { translation: world_position.extend(0.0) })
+                },
+                MouseButton::Right => {
+                    spawnenemy_evw.send(SpawnEnemy { translation: world_position.extend(0.0) })
+                },
+                _ => (),
             }
         }
-    }
-
-    if player_movement != Vec2::ZERO {
-        actions.player_movement = Some(player_movement.normalize());
-    } else {
-        actions.player_movement = None;
     }
 }
