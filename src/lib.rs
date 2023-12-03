@@ -20,7 +20,10 @@ use bevy::app::App;
 #[cfg(debug_assertions)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
-use bevy_xpbd_2d::{plugins::{PhysicsPlugins, PhysicsDebugPlugin}, resources::Gravity};
+use bevy_xpbd_2d::{
+    plugins::{PhysicsDebugPlugin, PhysicsPlugins},
+    resources::Gravity,
+};
 use debug::DebugPlugin;
 use units::UnitPluging;
 
@@ -42,18 +45,20 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<GameState>().add_plugins((
-            LoadingPlugin,
-            MenuPlugin,
-            ActionsPlugin,
-            InternalAudioPlugin,
-            CastlePlugin,
-            UnitPluging,
-            AttributesPlugin,
-            DebugPlugin,
-            PhysicsPlugins::default(),
-            PhysicsDebugPlugin::default(),
-        )).insert_resource(Gravity::ZERO);
+        app.add_state::<GameState>()
+            .add_plugins((
+                LoadingPlugin,
+                MenuPlugin,
+                ActionsPlugin,
+                InternalAudioPlugin,
+                CastlePlugin,
+                UnitPluging,
+                AttributesPlugin,
+                DebugPlugin,
+                PhysicsPlugins::default(),
+                PhysicsDebugPlugin::default(),
+            ))
+            .insert_resource(Gravity::ZERO);
 
         #[cfg(debug_assertions)]
         {

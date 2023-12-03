@@ -53,7 +53,7 @@ pub fn emit_spawn_action(
                 MouseButton::Left => spawnally_evw.send(SpawnAlly {
                     translation: world_position.extend(0.0),
                 }),
-                MouseButton::Right => spawnenemy_evw.send(SpawnEnemy {
+                MouseButton::Middle => spawnenemy_evw.send(SpawnEnemy {
                     translation: world_position.extend(0.0),
                 }),
                 _ => (),

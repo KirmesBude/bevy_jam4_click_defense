@@ -55,10 +55,7 @@ fn apply_health_delta(
     }
 }
 
-fn die(
-    mut commands: Commands,
-    health_query: Query<(Entity, &Health), Changed<Health>>,
-) {
+fn die(mut commands: Commands, health_query: Query<(Entity, &Health), Changed<Health>>) {
     for (entity, health) in &health_query {
         if health.current == 0.0 {
             commands.entity(entity).despawn();
