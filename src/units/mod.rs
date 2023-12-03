@@ -1,6 +1,10 @@
 use bevy::prelude::*;
 
-use crate::{loading::TextureAssets, actions::{SpawnEnemy, SpawnAlly}, GameState};
+use crate::{
+    actions::{SpawnAlly, SpawnEnemy},
+    loading::TextureAssets,
+    GameState,
+};
 
 pub struct UnitPluging;
 
@@ -8,14 +12,17 @@ pub struct UnitPluging;
 /// Unit logic is only active during the State `GameState::Playing`
 impl Plugin for UnitPluging {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (spawn_ally, spawn_enemy).run_if(in_state(GameState::Playing)));
+        app.add_systems(
+            Update,
+            (spawn_ally, spawn_enemy).run_if(in_state(GameState::Playing)),
+        );
     }
 }
 
 #[derive(Debug, Component, Clone, Copy)]
 enum Faction {
     Ally,
-    Enemy
+    Enemy,
 }
 
 impl Faction {
@@ -35,7 +42,11 @@ fn spawn_unit(
 ) {
     commands
         .spawn(SpriteBundle {
-            sprite: Sprite { color: faction.color(), ..Default::default() },
+            sprite: Sprite {
+                color: faction.color(),
+                custom_size: Some(Vec2::new(20.0, 20.0)),
+                ..Default::default()
+            },
             texture: textures.bevy.clone(),
             transform: Transform::from_translation(translation),
             ..Default::default()

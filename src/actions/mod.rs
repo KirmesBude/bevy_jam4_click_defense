@@ -15,9 +15,9 @@ impl Plugin for ActionsPlugin {
         app.add_event::<SpawnEnemy>()
             .add_event::<SpawnAlly>()
             .add_systems(
-            Update,
-            emit_spawn_action.run_if(in_state(GameState::Playing)),
-        );
+                Update,
+                emit_spawn_action.run_if(in_state(GameState::Playing)),
+            );
     }
 }
 
@@ -45,16 +45,17 @@ pub fn emit_spawn_action(
         if ev.state == ButtonState::Pressed {
             let window = windows.get(ev.window).unwrap();
             let (camera, camera_transform) = cameras.get_single().unwrap();
-            let world_position = viewport_to_world_position(window, camera, camera_transform).unwrap();
+            let world_position =
+                viewport_to_world_position(window, camera, camera_transform).unwrap();
             info!("{}", world_position);
 
             match ev.button {
-                MouseButton::Left => {
-                    spawnally_evw.send(SpawnAlly { translation: world_position.extend(0.0) })
-                },
-                MouseButton::Right => {
-                    spawnenemy_evw.send(SpawnEnemy { translation: world_position.extend(0.0) })
-                },
+                MouseButton::Left => spawnally_evw.send(SpawnAlly {
+                    translation: world_position.extend(0.0),
+                }),
+                MouseButton::Right => spawnenemy_evw.send(SpawnEnemy {
+                    translation: world_position.extend(0.0),
+                }),
                 _ => (),
             }
         }

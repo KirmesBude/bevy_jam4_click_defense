@@ -26,10 +26,7 @@ fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {
         .insert(Player);
 }
 
-fn move_player(
-    time: Res<Time>,
-    mut player_query: Query<&mut Transform, With<Player>>,
-) {
+fn move_player(time: Res<Time>, mut player_query: Query<&mut Transform, With<Player>>) {
     /*
     if actions.player_movement.is_none() {
         return;
