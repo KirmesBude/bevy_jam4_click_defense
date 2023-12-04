@@ -1,4 +1,4 @@
-use crate::attributes::{ApplyHealthDelta, Health};
+use crate::attributes::{ApplyHealthDelta, Health, Immortal};
 use crate::hit_detection::HurtBoxBundle;
 use crate::loading::TextureAssets;
 use crate::physics::PhysicsCollisionBundle;
@@ -23,10 +23,7 @@ pub struct MainCastleHealthUI;
 impl Plugin for CastlePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Playing), (spawn_castle, spawn_health_ui))
-            .add_systems(
-                Update,
-                (update_health, debug_damage_castle).run_if(in_state(GameState::Playing)),
-            );
+            .add_systems(Update, (update_health).run_if(in_state(GameState::Playing)));
     }
 }
 
@@ -42,6 +39,7 @@ fn spawn_castle(mut commands: Commands, textures: Res<TextureAssets>) {
             ..Default::default()
         })
         .insert((Castle, MainCastle))
+        .insert(Immortal)
         .insert(Health::new(1000.0))
         .insert(PhysicsCollisionBundle {
             rigid_body: RigidBody::Static,

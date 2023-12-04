@@ -3,6 +3,8 @@ use bevy_xpbd_2d::components::{
     Collider, ColliderParent, CollidingEntities, CollisionLayers, Sensor,
 };
 
+use crate::attributes::ApplyHealthDelta;
+
 pub struct HitDetectionPlugin;
 
 // This plugin is responsible to control the game audio
@@ -41,6 +43,7 @@ pub struct HurtBoxBundle {
 fn hit_detection(
     hit_boxes: Query<(&ColliderParent, &CollidingEntities), With<HitBox>>,
     hurt_boxes: Query<&ColliderParent, With<HurtBox>>,
+    mut applyhealthdelta_evw: EventWriter<ApplyHealthDelta>,
 ) {
     for (parent, colliding_entities) in &hit_boxes {
         let colliding_entities: Vec<Entity> = colliding_entities
@@ -54,6 +57,13 @@ fn hit_detection(
                 parent.get(),
                 colliding_entities
             );
+
+            applyhealthdelta_evw.send_batch(colliding_entities.iter().map(|entity| {
+                ApplyHealthDelta {
+                    entity: *entity,
+                    delta: -10.0,
+                }
+            }));
         }
     }
 }

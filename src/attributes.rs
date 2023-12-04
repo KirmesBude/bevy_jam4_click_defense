@@ -49,16 +49,23 @@ fn apply_health_delta(
     mut health_query: Query<&mut Health>,
 ) {
     for ev in applyhealthdelta_evr.read() {
+        println!("{:?}", ev);
         if let Ok(mut health) = health_query.get_mut(ev.entity) {
             health.apply(ev.delta);
         }
     }
 }
 
-fn die(mut commands: Commands, health_query: Query<(Entity, &Health), Changed<Health>>) {
+fn die(
+    mut commands: Commands,
+    health_query: Query<(Entity, &Health), (Changed<Health>, Without<Immortal>)>,
+) {
     for (entity, health) in &health_query {
         if health.current == 0.0 {
-            commands.entity(entity).despawn();
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
+
+#[derive(Debug, Default, Component)]
+pub struct Immortal;

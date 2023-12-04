@@ -88,6 +88,7 @@ fn spawn_unit(
             collider: Collider::ball(10.0),
             ..Default::default()
         })
+        .insert(Health::new(100.0))
         .insert(MoveTowards { entity })
         .with_children(|children| {
             children.spawn(HurtBoxBundle {
@@ -238,32 +239,6 @@ fn despawn_from_alive_timer(
     for (entity, mut alive_timer) in &mut alive_timers {
         if alive_timer.tick(time.delta()).finished() {
             commands.entity(entity).despawn();
-        }
-    }
-}
-
-fn damage_stuff(
-    mut collision_event_reader: EventReader<Collision>,
-    mut applyhealthdelta_evw: EventWriter<ApplyHealthDelta>,
-    attacks: Query<&Attack>,
-    healths: Query<&Health>,
-    time: Res<Time>,
-) {
-    for Collision(contacts) in collision_event_reader.read() {
-        eprintln!("{:?}", contacts);
-        let delta = 10.0 * time.delta_seconds();
-        if attacks.contains(contacts.entity1) && healths.contains(contacts.entity2) {
-            eprintln!("lol1");
-            applyhealthdelta_evw.send(ApplyHealthDelta {
-                entity: contacts.entity2,
-                delta,
-            });
-        } else if attacks.contains(contacts.entity2) && healths.contains(contacts.entity1) {
-            eprintln!("lol2");
-            applyhealthdelta_evw.send(ApplyHealthDelta {
-                entity: contacts.entity1,
-                delta,
-            });
         }
     }
 }
