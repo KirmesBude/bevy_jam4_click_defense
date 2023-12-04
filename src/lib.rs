@@ -5,10 +5,11 @@ mod attributes;
 mod audio;
 mod castle;
 mod debug;
+mod hit_detection;
 mod loading;
 mod menu;
-mod units;
 mod physics;
+mod units;
 
 use crate::actions::ActionsPlugin;
 use crate::audio::InternalAudioPlugin;
@@ -22,6 +23,7 @@ use bevy::app::App;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use debug::DebugPlugin;
+use hit_detection::HitDetectionPlugin;
 use physics::InternalPhysicsPlugin;
 use units::UnitPluging;
 
@@ -43,18 +45,18 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<GameState>()
-            .add_plugins((
-                LoadingPlugin,
-                MenuPlugin,
-                ActionsPlugin,
-                InternalAudioPlugin,
-                CastlePlugin,
-                UnitPluging,
-                AttributesPlugin,
-                DebugPlugin,
-                InternalPhysicsPlugin,
-            ));
+        app.add_state::<GameState>().add_plugins((
+            LoadingPlugin,
+            MenuPlugin,
+            ActionsPlugin,
+            InternalAudioPlugin,
+            CastlePlugin,
+            UnitPluging,
+            AttributesPlugin,
+            DebugPlugin,
+            InternalPhysicsPlugin,
+            HitDetectionPlugin,
+        ));
         #[cfg(debug_assertions)]
         {
             app.add_plugins((FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin::default()));

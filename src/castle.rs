@@ -1,7 +1,11 @@
 use crate::attributes::{ApplyHealthDelta, Health};
+use crate::hit_detection::HurtBoxBundle;
 use crate::loading::TextureAssets;
+use crate::physics::PhysicsCollisionBundle;
+use crate::units::Faction;
 use crate::GameState;
 use bevy::prelude::*;
+use bevy_xpbd_2d::components::{Collider, CollisionLayers, RigidBody};
 
 pub struct CastlePlugin;
 
@@ -29,12 +33,31 @@ impl Plugin for CastlePlugin {
 fn spawn_castle(mut commands: Commands, textures: Res<TextureAssets>) {
     commands
         .spawn(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(256.0, 256.0)),
+                ..Default::default()
+            },
             texture: textures.bevy.clone(),
             transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
             ..Default::default()
         })
         .insert((Castle, MainCastle))
-        .insert(Health::new(1000.0));
+        .insert(Health::new(1000.0))
+        .insert(PhysicsCollisionBundle {
+            rigid_body: RigidBody::Static,
+            collider: Collider::ball(128.0),
+            ..Default::default()
+        })
+        .with_children(|children| {
+            children.spawn(HurtBoxBundle {
+                collider: Collider::ball(127.0),
+                collisionlayers: CollisionLayers::new(
+                    [Faction::Ally.hurt_layer()],
+                    [Faction::Ally.opposite().hit_layer()],
+                ),
+                ..Default::default()
+            });
+        });
 }
 
 fn spawn_health_ui(mut commands: Commands) {

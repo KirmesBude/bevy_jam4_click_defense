@@ -1,15 +1,18 @@
 use bevy::prelude::*;
-use bevy_xpbd_2d::{prelude::PhysicsLayer, components::{CollisionLayers, Collider, RigidBody}, plugins::{PhysicsPlugins, PhysicsDebugPlugin}, resources::Gravity};
+use bevy_xpbd_2d::{
+    components::{Collider, CollisionLayers, RigidBody},
+    plugins::{PhysicsDebugPlugin, PhysicsPlugins},
+    prelude::PhysicsLayer,
+    resources::Gravity,
+};
 
 pub struct InternalPhysicsPlugin;
 
 // This plugin is responsible to control the game audio
 impl Plugin for InternalPhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            PhysicsPlugins::default(),
-            PhysicsDebugPlugin::default(),
-        )).insert_resource(Gravity::ZERO);
+        app.add_plugins((PhysicsPlugins::default(), PhysicsDebugPlugin::default()))
+            .insert_resource(Gravity::ZERO);
     }
 }
 
@@ -18,11 +21,11 @@ pub struct PhysicsCollisionLayer;
 
 impl PhysicsLayer for PhysicsCollisionLayer {
     fn to_bits(&self) -> u32 {
-        1<<31
+        1 << 31
     }
 
     fn all_bits() -> u32 {
-        1<<31 /* TODO: Not sure */
+        1 << 31 /* TODO: Not sure */
     }
 }
 
@@ -35,7 +38,11 @@ pub struct PhysicsCollisionBundle {
 
 impl Default for PhysicsCollisionBundle {
     fn default() -> Self {
-        Self { rigid_body: Default::default(), collider: Default::default(), collision_layer: CollisionLayers::new([PhysicsCollisionLayer], [PhysicsCollisionLayer]) }
+        Self {
+            rigid_body: Default::default(),
+            collider: Default::default(),
+            collision_layer: CollisionLayers::new([PhysicsCollisionLayer], [PhysicsCollisionLayer]),
+        }
     }
 }
 
@@ -46,4 +53,3 @@ pub enum SensorLayers {
     EnemyHurt,
     EnemyHit,
 }
-

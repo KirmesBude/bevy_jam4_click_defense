@@ -2,16 +2,19 @@ use std::ops::Sub;
 
 use bevy::prelude::*;
 use bevy_xpbd_2d::{
-    components::{Collider, CollisionLayers, LinearVelocity, Sensor, CollidingEntities, ColliderParent},
-    prelude::PhysicsLayer, plugins::collision::contact_reporting::Collision,
+    components::{Collider, CollisionLayers, LinearVelocity, Sensor},
+    plugins::collision::contact_reporting::Collision,
+    prelude::PhysicsLayer,
 };
 
 use crate::{
     actions::{SpawnAlly, SpawnEnemy},
-    attributes::{Health, ApplyHealthDelta},
+    attributes::{ApplyHealthDelta, Health},
     castle::MainCastle,
+    hit_detection::{HitBoxBundle, HurtBoxBundle},
     loading::TextureAssets,
-    GameState, physics::{PhysicsCollisionBundle, SensorLayers},
+    physics::{PhysicsCollisionBundle, SensorLayers},
+    GameState,
 };
 
 pub struct UnitPluging;
@@ -20,43 +23,42 @@ pub struct UnitPluging;
 /// Unit logic is only active during the State `GameState::Playing`
 impl Plugin for UnitPluging {
     fn build(&self, app: &mut App) {
-        app.add_event::<AttackEvent>()
-            .add_systems(
+        app.add_event::<AttackEvent>().add_systems(
             Update,
-            (spawn_ally, spawn_enemy, move_towards, hit_detection).run_if(in_state(GameState::Playing)),
+            (spawn_ally, spawn_enemy, move_towards).run_if(in_state(GameState::Playing)),
         );
     }
 }
 
 #[derive(Debug, Component, Clone, Copy, PhysicsLayer)]
-enum Faction {
+pub enum Faction {
     Ally,
     Enemy,
 }
 
 impl Faction {
-    fn color(&self) -> Color {
+    pub fn color(&self) -> Color {
         match self {
             Self::Ally => Color::BLUE,
             Self::Enemy => Color::RED,
-        } 
+        }
     }
 
-    fn opposite(&self) -> Self {
+    pub fn opposite(&self) -> Self {
         match self {
             Self::Ally => Self::Enemy,
             Self::Enemy => Self::Ally,
         }
     }
 
-    fn hurt_layer(&self) -> SensorLayers {
+    pub fn hurt_layer(&self) -> SensorLayers {
         match self {
             Faction::Ally => SensorLayers::AllyHurt,
             Faction::Enemy => SensorLayers::EnemyHurt,
         }
     }
 
-    fn hit_layer(&self) -> SensorLayers {
+    pub fn hit_layer(&self) -> SensorLayers {
         match self {
             Faction::Ally => SensorLayers::AllyHit,
             Faction::Enemy => SensorLayers::EnemyHit,
@@ -82,21 +84,28 @@ fn spawn_unit(
             transform: Transform::from_translation(translation),
             ..Default::default()
         })
-        .insert(PhysicsCollisionBundle { collider: Collider::ball(10.0), ..Default::default()})
+        .insert(PhysicsCollisionBundle {
+            collider: Collider::ball(10.0),
+            ..Default::default()
+        })
         .insert(MoveTowards { entity })
         .with_children(|children| {
-            match faction {
-                Faction::Ally => children.spawn(HurtBoxBundle {
-                    collider: Collider::ball(9.0),
-                    collisionlayers: CollisionLayers::new([faction.hurt_layer()], [faction.opposite().hit_layer()]),
-                    ..Default::default()
-                }),
-                Faction::Enemy => children.spawn(HitBoxBundle {
-                    collider: Collider::ball(12.0),
-                    collisionlayers: CollisionLayers::new([faction.hit_layer()], [faction.opposite().hurt_layer()]),
-                    ..Default::default()
-                }),
-            };
+            children.spawn(HurtBoxBundle {
+                collider: Collider::ball(9.0),
+                collisionlayers: CollisionLayers::new(
+                    [faction.hurt_layer()],
+                    [faction.opposite().hit_layer()],
+                ),
+                ..Default::default()
+            });
+            children.spawn(HitBoxBundle {
+                collider: Collider::ball(12.0),
+                collisionlayers: CollisionLayers::new(
+                    [faction.hit_layer()],
+                    [faction.opposite().hurt_layer()],
+                ),
+                ..Default::default()
+            });
         });
 }
 
@@ -170,7 +179,11 @@ fn advance_attack_cooldown_timer(
 ) {
     for (mut cooldown, transform) in &mut cooldowns {
         if cooldown.timer.tick(time.delta()).just_finished() {
-            attackevent_evw.send(AttackEvent { position: transform.translation().truncate(), duration: 1.0, damage: 5.0 })
+            attackevent_evw.send(AttackEvent {
+                position: transform.translation().truncate(),
+                duration: 1.0,
+                damage: 5.0,
+            })
         }
     }
 }
@@ -182,24 +195,22 @@ pub struct AttackEvent {
     damage: f32,
 }
 
-fn spawn_attack(
-    mut commands: Commands,
-    mut attackevent_evr: EventReader<AttackEvent>,
-) {
+fn spawn_attack(mut commands: Commands, mut attackevent_evr: EventReader<AttackEvent>) {
     for attackevent in attackevent_evr.read() {
-        commands.spawn(
-            AttackBundle {
-                attack: Attack(attackevent.damage),
-                alive_timer: AliveTimer(Timer::from_seconds(attackevent.duration, TimerMode::Once)),
-                spatial: SpatialBundle {
-                    transform: Transform::from_translation(attackevent.position.extend(0.0)),
-                    ..Default::default()
-                },
-                collider: Collider::ball(15.0),
-                collision_layers: CollisionLayers::new([SensorLayers::EnemyHit], [SensorLayers::AllyHurt]),
+        commands.spawn(AttackBundle {
+            attack: Attack(attackevent.damage),
+            alive_timer: AliveTimer(Timer::from_seconds(attackevent.duration, TimerMode::Once)),
+            spatial: SpatialBundle {
+                transform: Transform::from_translation(attackevent.position.extend(0.0)),
                 ..Default::default()
-            }
-        );
+            },
+            collider: Collider::ball(15.0),
+            collision_layers: CollisionLayers::new(
+                [SensorLayers::EnemyHit],
+                [SensorLayers::AllyHurt],
+            ),
+            ..Default::default()
+        });
     }
 }
 
@@ -243,52 +254,16 @@ fn damage_stuff(
         let delta = 10.0 * time.delta_seconds();
         if attacks.contains(contacts.entity1) && healths.contains(contacts.entity2) {
             eprintln!("lol1");
-            applyhealthdelta_evw.send(ApplyHealthDelta { entity: contacts.entity2, delta });
+            applyhealthdelta_evw.send(ApplyHealthDelta {
+                entity: contacts.entity2,
+                delta,
+            });
         } else if attacks.contains(contacts.entity2) && healths.contains(contacts.entity1) {
             eprintln!("lol2");
-            applyhealthdelta_evw.send(ApplyHealthDelta { entity: contacts.entity1, delta });
-        }
-    }
-}
-
-#[derive(Debug, Default, Component)]
-pub enum HitBox {
-    Once(Vec<Entity>),
-    #[default]
-    Persistent,
-}
-
-#[derive(Debug, Default, Bundle)]
-pub struct HitBoxBundle {
-    hitbox: HitBox,
-    collider: Collider,
-    sensor: Sensor,
-    collisionlayers: CollisionLayers,
-}
-
-#[derive(Debug, Default, Component)]
-pub struct HurtBox;
-
-#[derive(Debug, Default, Bundle)]
-pub struct HurtBoxBundle {
-    hurtbox: HurtBox,
-    collider: Collider,
-    sensor: Sensor,
-    collisionlayers: CollisionLayers,
-}
-
-fn hit_detection(
-    hit_boxes: Query<(&ColliderParent, &CollidingEntities), With<HitBox>>,
-    hurt_boxes: Query<(), With<HurtBox>>,
-) {
-    for (parent, colliding_entities) in &hit_boxes {
-        let colliding_entities: Vec<&Entity> = colliding_entities.iter().filter(|entity| hurt_boxes.contains(**entity)).collect();
-        if !colliding_entities.is_empty() {
-            println!(
-                "{:?} is colliding with the following entities: {:?}",
-                parent.get(),
-                colliding_entities
-            );
+            applyhealthdelta_evw.send(ApplyHealthDelta {
+                entity: contacts.entity1,
+                delta,
+            });
         }
     }
 }
