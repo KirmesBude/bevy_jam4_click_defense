@@ -15,7 +15,22 @@ impl Plugin for HitDetectionPlugin {
 }
 
 #[derive(Debug, Default, Component)]
-pub enum HitBox {
+pub struct HitBox {
+    pub damage: f32,
+    pub kind: HitBoxKind,
+}
+
+impl HitBox {
+    pub fn clear(&mut self) {
+        match &mut self.kind {
+            HitBoxKind::Once(vec) => vec.clear(),
+            HitBoxKind::Persistent => { },
+        }
+    }
+}
+
+#[derive(Debug, Default, Component)]
+pub enum HitBoxKind {
     Once(Vec<Entity>),
     #[default]
     Persistent,
@@ -41,15 +56,29 @@ pub struct HurtBoxBundle {
 }
 
 fn hit_detection(
-    hit_boxes: Query<(&ColliderParent, &CollidingEntities), With<HitBox>>,
+    mut hit_boxes: Query<(&ColliderParent, &CollidingEntities, &mut HitBox)>,
     hurt_boxes: Query<&ColliderParent, With<HurtBox>>,
     mut applyhealthdelta_evw: EventWriter<ApplyHealthDelta>,
 ) {
-    for (parent, colliding_entities) in &hit_boxes {
-        let colliding_entities: Vec<Entity> = colliding_entities
+    for (parent, colliding_entities, mut hitbox) in &mut hit_boxes {
+        let mut colliding_entities: Vec<Entity> = colliding_entities
             .iter()
-            .filter(|entity| hurt_boxes.contains(**entity))
-            .map(|entity| hurt_boxes.get(*entity).unwrap().get())
+            .filter_map(|entity| {
+                if let Ok(collider_parent) = hurt_boxes.get(*entity) {
+                    let parent = collider_parent.get();
+
+                    if hurt_boxes.contains(*entity) && match &hitbox.kind {
+                        HitBoxKind::Once(vec) => !vec.contains(&parent),
+                        HitBoxKind::Persistent => true,
+                    } {
+                        Some(parent)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
             .collect();
         if !colliding_entities.is_empty() {
             println!(
@@ -61,9 +90,14 @@ fn hit_detection(
             applyhealthdelta_evw.send_batch(colliding_entities.iter().map(|entity| {
                 ApplyHealthDelta {
                     entity: *entity,
-                    delta: -10.0,
+                    delta: -hitbox.damage,
                 }
             }));
+
+            match hitbox.kind {
+                HitBoxKind::Once(ref mut vec) => vec.append(&mut colliding_entities),
+                HitBoxKind::Persistent => {},
+            }
         }
     }
 }

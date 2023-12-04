@@ -11,7 +11,7 @@ use crate::{
     actions::{SpawnAlly, SpawnEnemy},
     attributes::{ApplyHealthDelta, Health},
     castle::MainCastle,
-    hit_detection::{HitBoxBundle, HurtBoxBundle},
+    hit_detection::{HitBoxBundle, HurtBoxBundle, HitBox, HitBoxKind},
     loading::TextureAssets,
     physics::{PhysicsCollisionBundle, SensorLayers},
     GameState,
@@ -100,6 +100,7 @@ fn spawn_unit(
                 ..Default::default()
             });
             children.spawn(HitBoxBundle {
+                hitbox: HitBox { damage: 10.0, kind: HitBoxKind::Once(vec![]) },
                 collider: Collider::ball(12.0),
                 collisionlayers: CollisionLayers::new(
                     [faction.hit_layer()],
@@ -162,7 +163,7 @@ fn move_towards(
             .sub(source_transform.translation())
             .normalize()
             .truncate()
-            * 50.0;
+            * 30.0;
 
         velocity.0 = vector;
     }
