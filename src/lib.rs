@@ -8,6 +8,7 @@ mod debug;
 mod loading;
 mod menu;
 mod units;
+mod physics;
 
 use crate::actions::ActionsPlugin;
 use crate::audio::InternalAudioPlugin;
@@ -20,11 +21,8 @@ use bevy::app::App;
 #[cfg(debug_assertions)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
-use bevy_xpbd_2d::{
-    plugins::{PhysicsDebugPlugin, PhysicsPlugins},
-    resources::Gravity,
-};
 use debug::DebugPlugin;
+use physics::InternalPhysicsPlugin;
 use units::UnitPluging;
 
 // This example game uses States to separate logic
@@ -55,11 +53,8 @@ impl Plugin for GamePlugin {
                 UnitPluging,
                 AttributesPlugin,
                 DebugPlugin,
-                PhysicsPlugins::default(),
-                PhysicsDebugPlugin::default(),
-            ))
-            .insert_resource(Gravity::ZERO);
-
+                InternalPhysicsPlugin,
+            ));
         #[cfg(debug_assertions)]
         {
             app.add_plugins((FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin::default()));

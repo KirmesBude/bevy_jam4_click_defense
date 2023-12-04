@@ -2,7 +2,7 @@ use std::ops::Sub;
 
 use bevy::prelude::*;
 use bevy_xpbd_2d::{
-    components::{Collider, CollisionLayers, LinearVelocity, RigidBody, Sensor},
+    components::{Collider, CollisionLayers, LinearVelocity, Sensor, CollidingEntities, ColliderParent},
     prelude::PhysicsLayer, plugins::collision::contact_reporting::Collision,
 };
 
@@ -11,7 +11,7 @@ use crate::{
     attributes::{Health, ApplyHealthDelta},
     castle::MainCastle,
     loading::TextureAssets,
-    GameState,
+    GameState, physics::{PhysicsCollisionBundle, SensorLayers},
 };
 
 pub struct UnitPluging;
@@ -23,20 +23,13 @@ impl Plugin for UnitPluging {
         app.add_event::<AttackEvent>()
             .add_systems(
             Update,
-            (spawn_ally, spawn_enemy, move_towards, advance_attack_cooldown_timer, spawn_attack, despawn_from_alive_timer, damage_stuff).run_if(in_state(GameState::Playing)),
+            (spawn_ally, spawn_enemy, move_towards, hit_detection).run_if(in_state(GameState::Playing)),
         );
     }
 }
 
 #[derive(Debug, Component, Clone, Copy, PhysicsLayer)]
 enum Faction {
-    Ally,
-    Enemy,
-}
-
-#[derive(Debug, Component, Clone, Copy, PhysicsLayer)]
-enum PhyicsLayer {
-    Default,
     Ally,
     Enemy,
 }
@@ -56,10 +49,17 @@ impl Faction {
         }
     }
 
-    fn layer(&self) -> PhyicsLayer {
+    fn hurt_layer(&self) -> SensorLayers {
         match self {
-            Faction::Ally => PhyicsLayer::Ally,
-            Faction::Enemy => PhyicsLayer::Enemy,
+            Faction::Ally => SensorLayers::AllyHurt,
+            Faction::Enemy => SensorLayers::EnemyHurt,
+        }
+    }
+
+    fn hit_layer(&self) -> SensorLayers {
+        match self {
+            Faction::Ally => SensorLayers::AllyHit,
+            Faction::Enemy => SensorLayers::EnemyHit,
         }
     }
 }
@@ -82,13 +82,21 @@ fn spawn_unit(
             transform: Transform::from_translation(translation),
             ..Default::default()
         })
-        .insert(RigidBody::Dynamic)
+        .insert(PhysicsCollisionBundle { collider: Collider::ball(10.0), ..Default::default()})
         .insert(MoveTowards { entity })
-        .insert(Collider::ball(10.0))
-        .insert(CollisionLayers::new([PhyicsLayer::Default, faction.layer()], [PhyicsLayer::Default]))
-        .insert(Health::new(10.0))
-        .insert(AttackCooldown {
-            timer: Timer::from_seconds(1.0, TimerMode::Repeating)
+        .with_children(|children| {
+            match faction {
+                Faction::Ally => children.spawn(HurtBoxBundle {
+                    collider: Collider::ball(9.0),
+                    collisionlayers: CollisionLayers::new([faction.hurt_layer()], [faction.opposite().hit_layer()]),
+                    ..Default::default()
+                }),
+                Faction::Enemy => children.spawn(HitBoxBundle {
+                    collider: Collider::ball(12.0),
+                    collisionlayers: CollisionLayers::new([faction.hit_layer()], [faction.opposite().hurt_layer()]),
+                    ..Default::default()
+                }),
+            };
         });
 }
 
@@ -188,7 +196,7 @@ fn spawn_attack(
                     ..Default::default()
                 },
                 collider: Collider::ball(15.0),
-                collision_layers: CollisionLayers::new([PhyicsLayer::Enemy], [PhyicsLayer::Ally]),
+                collision_layers: CollisionLayers::new([SensorLayers::EnemyHit], [SensorLayers::AllyHurt]),
                 ..Default::default()
             }
         );
@@ -231,6 +239,7 @@ fn damage_stuff(
     time: Res<Time>,
 ) {
     for Collision(contacts) in collision_event_reader.read() {
+        eprintln!("{:?}", contacts);
         let delta = 10.0 * time.delta_seconds();
         if attacks.contains(contacts.entity1) && healths.contains(contacts.entity2) {
             eprintln!("lol1");
@@ -238,6 +247,48 @@ fn damage_stuff(
         } else if attacks.contains(contacts.entity2) && healths.contains(contacts.entity1) {
             eprintln!("lol2");
             applyhealthdelta_evw.send(ApplyHealthDelta { entity: contacts.entity1, delta });
+        }
+    }
+}
+
+#[derive(Debug, Default, Component)]
+pub enum HitBox {
+    Once(Vec<Entity>),
+    #[default]
+    Persistent,
+}
+
+#[derive(Debug, Default, Bundle)]
+pub struct HitBoxBundle {
+    hitbox: HitBox,
+    collider: Collider,
+    sensor: Sensor,
+    collisionlayers: CollisionLayers,
+}
+
+#[derive(Debug, Default, Component)]
+pub struct HurtBox;
+
+#[derive(Debug, Default, Bundle)]
+pub struct HurtBoxBundle {
+    hurtbox: HurtBox,
+    collider: Collider,
+    sensor: Sensor,
+    collisionlayers: CollisionLayers,
+}
+
+fn hit_detection(
+    hit_boxes: Query<(&ColliderParent, &CollidingEntities), With<HitBox>>,
+    hurt_boxes: Query<(), With<HurtBox>>,
+) {
+    for (parent, colliding_entities) in &hit_boxes {
+        let colliding_entities: Vec<&Entity> = colliding_entities.iter().filter(|entity| hurt_boxes.contains(**entity)).collect();
+        if !colliding_entities.is_empty() {
+            println!(
+                "{:?} is colliding with the following entities: {:?}",
+                parent.get(),
+                colliding_entities
+            );
         }
     }
 }
