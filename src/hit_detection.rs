@@ -27,6 +27,13 @@ impl HitBox {
             HitBoxKind::Persistent => { },
         }
     }
+
+    pub fn contains(&mut self, entity: Entity) -> bool {
+        match &self.kind {
+            HitBoxKind::Once(vec) => vec.contains(&entity),
+            HitBoxKind::Persistent => false,
+        }
+    }
 }
 
 #[derive(Debug, Default, Component)]
@@ -67,10 +74,7 @@ fn hit_detection(
                 if let Ok(collider_parent) = hurt_boxes.get(*entity) {
                     let parent = collider_parent.get();
 
-                    if hurt_boxes.contains(*entity) && match &hitbox.kind {
-                        HitBoxKind::Once(vec) => !vec.contains(&parent),
-                        HitBoxKind::Persistent => true,
-                    } {
+                    if hurt_boxes.contains(*entity) && !hitbox.contains(parent) {
                         Some(parent)
                     } else {
                         None

@@ -2,14 +2,13 @@ use std::ops::Sub;
 
 use bevy::prelude::*;
 use bevy_xpbd_2d::{
-    components::{Collider, CollisionLayers, LinearVelocity, Sensor},
-    plugins::collision::contact_reporting::Collision,
+    components::{Collider, CollisionLayers, LinearVelocity},
     prelude::PhysicsLayer,
 };
 
 use crate::{
     actions::{SpawnAlly, SpawnEnemy},
-    attributes::{ApplyHealthDelta, Health},
+    attributes::Health,
     castle::MainCastle,
     hit_detection::{HitBoxBundle, HurtBoxBundle, HitBox, HitBoxKind},
     loading::TextureAssets,
@@ -23,9 +22,9 @@ pub struct UnitPluging;
 /// Unit logic is only active during the State `GameState::Playing`
 impl Plugin for UnitPluging {
     fn build(&self, app: &mut App) {
-        app.add_event::<AttackEvent>().add_systems(
+        app.add_systems(
             Update,
-            (spawn_ally, spawn_enemy, move_towards).run_if(in_state(GameState::Playing)),
+            (spawn_ally, spawn_enemy, move_towards, advance_attack_cooldown_timer).run_if(in_state(GameState::Playing)),
         );
     }
 }
@@ -107,7 +106,7 @@ fn spawn_unit(
                     [faction.opposite().hurt_layer()],
                 ),
                 ..Default::default()
-            });
+            }).insert(AttackCooldown { timer: Timer::from_seconds(1.0, TimerMode::Repeating)});
         });
 }
 
@@ -169,6 +168,7 @@ fn move_towards(
     }
 }
 
+/* TODO: Actually place this on HitBox */
 #[derive(Debug, Component)]
 pub struct AttackCooldown {
     timer: Timer,
@@ -176,70 +176,11 @@ pub struct AttackCooldown {
 
 fn advance_attack_cooldown_timer(
     time: Res<Time>,
-    mut cooldowns: Query<(&mut AttackCooldown, &GlobalTransform)>,
-    mut attackevent_evw: EventWriter<AttackEvent>,
+    mut cooldowns: Query<(&mut AttackCooldown, &mut HitBox)>,
 ) {
-    for (mut cooldown, transform) in &mut cooldowns {
+    for (mut cooldown, mut hitbox) in &mut cooldowns {
         if cooldown.timer.tick(time.delta()).just_finished() {
-            attackevent_evw.send(AttackEvent {
-                position: transform.translation().truncate(),
-                duration: 1.0,
-                damage: 5.0,
-            })
-        }
-    }
-}
-
-#[derive(Debug, Event)]
-pub struct AttackEvent {
-    position: Vec2,
-    duration: f32,
-    damage: f32,
-}
-
-fn spawn_attack(mut commands: Commands, mut attackevent_evr: EventReader<AttackEvent>) {
-    for attackevent in attackevent_evr.read() {
-        commands.spawn(AttackBundle {
-            attack: Attack(attackevent.damage),
-            alive_timer: AliveTimer(Timer::from_seconds(attackevent.duration, TimerMode::Once)),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(attackevent.position.extend(0.0)),
-                ..Default::default()
-            },
-            collider: Collider::ball(15.0),
-            collision_layers: CollisionLayers::new(
-                [SensorLayers::EnemyHit],
-                [SensorLayers::AllyHurt],
-            ),
-            ..Default::default()
-        });
-    }
-}
-
-#[derive(Debug, Default, Component, Deref, DerefMut)]
-pub struct Attack(f32);
-
-#[derive(Debug, Default, Bundle)]
-pub struct AttackBundle {
-    attack: Attack,
-    alive_timer: AliveTimer,
-    spatial: SpatialBundle,
-    collider: Collider,
-    sensor: Sensor,
-    collision_layers: CollisionLayers,
-}
-
-#[derive(Debug, Default, Component, Deref, DerefMut)]
-pub struct AliveTimer(Timer);
-
-fn despawn_from_alive_timer(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut alive_timers: Query<(Entity, &mut AliveTimer)>,
-) {
-    for (entity, mut alive_timer) in &mut alive_timers {
-        if alive_timer.tick(time.delta()).finished() {
-            commands.entity(entity).despawn();
+            hitbox.clear();
         }
     }
 }
