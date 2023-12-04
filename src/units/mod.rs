@@ -10,7 +10,7 @@ use crate::{
     actions::{SpawnAlly, SpawnEnemy},
     attributes::Health,
     castle::MainCastle,
-    hit_detection::{HitBoxBundle, HurtBoxBundle, HitBox, HitBoxKind},
+    hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
     loading::TextureAssets,
     physics::{PhysicsCollisionBundle, SensorLayers},
     GameState,
@@ -24,7 +24,13 @@ impl Plugin for UnitPluging {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (spawn_ally, spawn_enemy, move_towards, advance_attack_cooldown_timer).run_if(in_state(GameState::Playing)),
+            (
+                spawn_ally,
+                spawn_enemy,
+                move_towards,
+                advance_attack_cooldown_timer,
+            )
+                .run_if(in_state(GameState::Playing)),
         );
     }
 }
@@ -65,14 +71,14 @@ impl Faction {
     }
 }
 
-fn spawn_unit(
+pub fn spawn_unit(
     commands: &mut Commands,
     faction: Faction,
     translation: Vec3,
     textures: &Res<TextureAssets>,
     entity: Option<Entity>,
 ) {
-    commands
+    let id = commands
         .spawn(SpriteBundle {
             sprite: Sprite {
                 color: faction.color(),
@@ -88,7 +94,6 @@ fn spawn_unit(
             ..Default::default()
         })
         .insert(Health::new(100.0))
-        .insert(MoveTowards { entity })
         .with_children(|children| {
             children.spawn(HurtBoxBundle {
                 collider: Collider::ball(9.0),
@@ -98,16 +103,31 @@ fn spawn_unit(
                 ),
                 ..Default::default()
             });
-            children.spawn(HitBoxBundle {
-                hitbox: HitBox { damage: 10.0, kind: HitBoxKind::Once(vec![]) },
-                collider: Collider::ball(12.0),
-                collisionlayers: CollisionLayers::new(
-                    [faction.hit_layer()],
-                    [faction.opposite().hurt_layer()],
-                ),
-                ..Default::default()
-            }).insert(AttackCooldown { timer: Timer::from_seconds(1.0, TimerMode::Repeating)});
-        });
+            children
+                .spawn(HitBoxBundle {
+                    hitbox: HitBox {
+                        damage: 10.0,
+                        kind: HitBoxKind::Once(vec![]),
+                    },
+                    collider: Collider::ball(12.0),
+                    collisionlayers: CollisionLayers::new(
+                        [faction.hit_layer()],
+                        [faction.opposite().hurt_layer()],
+                    ),
+                    ..Default::default()
+                })
+                .insert(AttackCooldown {
+                    timer: Timer::from_seconds(1.0, TimerMode::Repeating),
+                });
+        })
+        .id();
+
+    match faction {
+        Faction::Ally => {}
+        Faction::Enemy => {
+            commands.entity(id).insert(MoveTowards { entity });
+        }
+    }
 }
 
 pub fn spawn_enemy(
@@ -117,6 +137,7 @@ pub fn spawn_enemy(
     castle: Query<Entity, With<MainCastle>>,
 ) {
     for ev in spawnenemy_evr.read() {
+        println!("spawn enemy");
         spawn_unit(
             &mut commands,
             Faction::Enemy,

@@ -24,7 +24,7 @@ impl HitBox {
     pub fn clear(&mut self) {
         match &mut self.kind {
             HitBoxKind::Once(vec) => vec.clear(),
-            HitBoxKind::Persistent => { },
+            HitBoxKind::Persistent => {}
         }
     }
 
@@ -100,7 +100,7 @@ fn hit_detection(
 
             match hitbox.kind {
                 HitBoxKind::Once(ref mut vec) => vec.append(&mut colliding_entities),
-                HitBoxKind::Persistent => {},
+                HitBoxKind::Persistent => {}
             }
         }
     }
