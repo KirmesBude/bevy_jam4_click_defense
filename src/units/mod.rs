@@ -7,11 +7,11 @@ use bevy_xpbd_2d::{
 use crate::{
     actions::{SpawnAlly, SpawnEnemy},
     attributes::Health,
-    behaviour::Behaviour,
+    behaviour::{Behaviour, EnemyFinderBundle},
     castle::MainCastle,
     hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
     loading::TextureAssets,
-    physics::{PhysicsCollisionBundle, SensorLayers},
+    physics::{PhysicsCollisionBundle, PhysicsCollisionLayer, SensorLayers},
     GameState,
 };
 
@@ -114,6 +114,14 @@ pub fn spawn_unit(
                 .insert(AttackCooldown {
                     timer: Timer::from_seconds(1.0, TimerMode::Repeating),
                 });
+            children.spawn(EnemyFinderBundle {
+                collider: Collider::ball(60.0),
+                collisionlayers: CollisionLayers::new(
+                    [faction.hit_layer()],
+                    [faction.opposite().hurt_layer()],
+                ),
+                ..Default::default()
+            });
         });
 }
 
