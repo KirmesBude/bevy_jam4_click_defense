@@ -41,7 +41,7 @@ fn tick_wave_timer(
 ) {
     if wave.timer.tick(time.delta()).just_finished() {
         for transform in &spawners {
-            (0..(wave.level * 2)).into_iter().for_each(|_| {
+            (0..wave.level).for_each(|_| {
                 let offset = Vec2::new(
                     (rng.next_u32() % 30) as f32 - 15.0,
                     (rng.next_u32() % 30) as f32 - 15.0,

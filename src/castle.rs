@@ -1,4 +1,4 @@
-use crate::attributes::{ApplyHealthDelta, Health, Immortal};
+use crate::attributes::{Health, Immortal};
 use crate::hit_detection::HurtBoxBundle;
 use crate::loading::TextureAssets;
 use crate::physics::PhysicsCollisionBundle;
@@ -89,15 +89,4 @@ fn update_health(
     let mut castle_health_ui = castle_health_ui.single_mut();
 
     castle_health_ui.sections[0].value = format!("{}", castle_health);
-}
-
-fn debug_damage_castle(
-    time: Res<Time>,
-    mut applyhealthdelta_evw: EventWriter<ApplyHealthDelta>,
-    castle_health: Query<Entity, (With<Castle>, With<MainCastle>)>,
-) {
-    let entity = castle_health.single();
-    let delta = -10.0 * time.delta_seconds();
-
-    applyhealthdelta_evw.send(ApplyHealthDelta { entity, delta });
 }

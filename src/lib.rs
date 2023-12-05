@@ -3,6 +3,7 @@
 mod actions;
 mod attributes;
 mod audio;
+mod behaviour;
 mod castle;
 mod debug;
 mod hit_detection;
@@ -19,6 +20,7 @@ use crate::loading::LoadingPlugin;
 use crate::menu::MenuPlugin;
 
 use attributes::AttributesPlugin;
+use behaviour::BehaviourPlugin;
 use bevy::app::App;
 #[cfg(debug_assertions)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
@@ -61,6 +63,7 @@ impl Plugin for GamePlugin {
             HitDetectionPlugin,
             SpawnerPlugin,
             EntropyPlugin::<ChaCha8Rng>::default(),
+            BehaviourPlugin,
         ));
         #[cfg(debug_assertions)]
         {
