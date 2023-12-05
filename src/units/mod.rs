@@ -11,7 +11,7 @@ use crate::{
     castle::MainCastle,
     hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
     loading::TextureAssets,
-    physics::{PhysicsCollisionBundle, PhysicsCollisionLayer, SensorLayers},
+    physics::{PhysicsCollisionBundle, SensorLayers},
     GameState,
 };
 

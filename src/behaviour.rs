@@ -20,6 +20,7 @@ impl Plugin for BehaviourPlugin {
     }
 }
 
+/* TODO: Add "DefaultBehaviour" Component */
 #[derive(Debug, Component)]
 pub enum Behaviour {
     Wandering(Timer),
@@ -45,8 +46,8 @@ fn behaviour(
     mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
 ) {
     for (source_entity, mut velocity, mut behaviour, colliding_entities) in query.iter_mut() {
-        let behaviour = behaviour.as_mut();
-        match behaviour {
+        let inner_behaviour = behaviour.as_mut();
+        match inner_behaviour {
             Behaviour::Wandering(ref mut timer) => wandering(&time, timer, &mut velocity, &mut rng),
             Behaviour::MoveToPoint(dst_point) => {
                 let src_point = transforms
@@ -62,15 +63,19 @@ fn behaviour(
                     .unwrap()
                     .translation()
                     .truncate();
-                let dst_point = transforms.get(*entity).unwrap().translation().truncate();
-
-                move_and_attack(
-                    &mut velocity,
-                    &src_point,
-                    &dst_point,
-                    colliding_entities,
-                    entity,
-                );
+                if let Ok(dst_transform) = transforms.get(*entity) {
+                    let dst_point = dst_transform.translation().truncate();
+                    move_and_attack(
+                        &mut velocity,
+                        &src_point,
+                        &dst_point,
+                        colliding_entities,
+                        entity,
+                    );
+                } else {
+                    velocity.0 = Vec2::ZERO;
+                    *behaviour = Behaviour::default(); /* TODO: Use "DefaultBehaviour" instead */
+                }
             }
         }
     }
