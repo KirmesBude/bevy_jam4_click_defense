@@ -5,7 +5,7 @@ use bevy_xpbd_2d::{
 };
 
 use crate::{
-    actions::{SpawnAlly, SpawnEnemy},
+    actions::{QueueUnit, SpawnAlly, SpawnEnemy},
     attributes::Health,
     behaviour::{Behaviour, DefaultBehaviour, EnemyFinderBundle},
     castle::AllyCastle,
@@ -23,7 +23,12 @@ impl Plugin for UnitPluging {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (spawn_ally, spawn_enemy, advance_attack_cooldown_timer)
+            (
+                spawn_ally,
+                spawn_enemy,
+                advance_attack_cooldown_timer,
+                spawn_from_queue,
+            )
                 .run_if(in_state(GameState::Playing)),
         );
     }
@@ -181,6 +186,75 @@ fn advance_attack_cooldown_timer(
     for (mut cooldown, mut hitbox) in &mut cooldowns {
         if cooldown.timer.tick(time.delta()).just_finished() {
             hitbox.clear();
+        }
+    }
+}
+
+fn spawn_from_queue(
+    ally_castle: Res<AllyCastle>,
+    transforms: Query<&GlobalTransform>,
+    mut queueunit_evr: EventReader<QueueUnit>,
+    mut commands: Commands,
+    textures: Res<TextureAssets>,
+) {
+    if let Some(entity) = ally_castle.0 {
+        if let Ok(transform) = transforms.get(entity) {
+            let translation = transform.translation();
+            for ev in queueunit_evr.read() {
+                commands
+                    .spawn(SpriteBundle {
+                        sprite: Sprite {
+                            color: Faction::Ally.color(),
+                            custom_size: Some(Vec2::new(20.0, 20.0)),
+                            ..Default::default()
+                        },
+                        texture: textures.bevy.clone(),
+                        transform: Transform::from_translation(
+                            translation + Vec3::new(128.0, 0.0, 0.0),
+                        ),
+                        ..Default::default()
+                    })
+                    .insert(PhysicsCollisionBundle {
+                        collider: Collider::ball(10.0),
+                        ..Default::default()
+                    })
+                    .insert(Behaviour::MoveToPoint(Vec2::new(1280.0, 0.0)))
+                    .insert(Health::new(100.0))
+                    .with_children(|children| {
+                        children.spawn(HurtBoxBundle {
+                            collider: Collider::ball(9.0),
+                            collisionlayers: CollisionLayers::new(
+                                [Faction::Ally.hurt_layer()],
+                                [Faction::Ally.opposite().hit_layer()],
+                            ),
+                            ..Default::default()
+                        });
+                        children
+                            .spawn(HitBoxBundle {
+                                hitbox: HitBox {
+                                    damage: 10.0,
+                                    kind: HitBoxKind::Once(vec![]),
+                                },
+                                collider: Collider::ball(12.0),
+                                collisionlayers: CollisionLayers::new(
+                                    [Faction::Ally.hit_layer()],
+                                    [Faction::Ally.opposite().hurt_layer()],
+                                ),
+                                ..Default::default()
+                            })
+                            .insert(AttackCooldown {
+                                timer: Timer::from_seconds(1.0, TimerMode::Repeating),
+                            });
+                        children.spawn(EnemyFinderBundle {
+                            collider: Collider::ball(60.0),
+                            collisionlayers: CollisionLayers::new(
+                                [Faction::Ally.hit_layer()],
+                                [Faction::Ally.opposite().hurt_layer()],
+                            ),
+                            ..Default::default()
+                        });
+                    });
+            }
         }
     }
 }

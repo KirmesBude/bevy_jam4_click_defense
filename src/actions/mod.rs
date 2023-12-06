@@ -1,4 +1,6 @@
+use bevy::input::keyboard::KeyboardInput;
 use bevy::input::mouse::MouseButtonInput;
+use bevy::input::ButtonState;
 use bevy::prelude::*;
 
 use crate::actions::game_control::viewport_to_world_position;
@@ -14,9 +16,10 @@ impl Plugin for ActionsPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SpawnEnemy>()
             .add_event::<SpawnAlly>()
+            .add_event::<QueueUnit>()
             .add_systems(
                 Update,
-                emit_spawn_action_mouse.run_if(in_state(GameState::Playing)),
+                (emit_spawn_action_mouse, emit_queue_unit).run_if(in_state(GameState::Playing)),
             );
     }
 }
@@ -38,8 +41,6 @@ pub fn emit_spawn_action_mouse(
     windows: Query<&Window>,
     cameras: Query<(&Camera, &GlobalTransform)>,
 ) {
-    use bevy::input::ButtonState;
-
     for ev in mousebtn_evr.read() {
         if ev.state == ButtonState::Pressed {
             let window = windows.get(ev.window).unwrap();
@@ -56,6 +57,22 @@ pub fn emit_spawn_action_mouse(
                     translation: world_position.extend(0.0),
                 }),
                 _ => (),
+            }
+        }
+    }
+}
+
+#[derive(Debug, Event)]
+pub struct QueueUnit {}
+
+pub fn emit_queue_unit(
+    mut keyboard_evr: EventReader<KeyboardInput>,
+    mut queueunit_evw: EventWriter<QueueUnit>,
+) {
+    for ev in keyboard_evr.read() {
+        if let Some(KeyCode::Space) = ev.key_code {
+            if ev.state == ButtonState::Pressed {
+                queueunit_evw.send(QueueUnit {});
             }
         }
     }
