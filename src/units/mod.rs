@@ -1,8 +1,10 @@
 use bevy::prelude::*;
+use bevy_rand::{prelude::ChaCha8Rng, resource::GlobalEntropy};
 use bevy_xpbd_2d::{
-    components::{Collider, CollisionLayers},
+    components::{Collider, CollidingEntities, CollisionLayers, Sensor},
     prelude::PhysicsLayer,
 };
+use rand_core::RngCore;
 
 use crate::{
     actions::{QueueUnit, SpawnAlly, SpawnEnemy},
@@ -28,6 +30,7 @@ impl Plugin for UnitPluging {
                 spawn_enemy,
                 advance_attack_cooldown_timer,
                 spawn_from_queue,
+                spawn_protection,
             )
                 .run_if(in_state(GameState::Playing)),
         );
@@ -196,6 +199,7 @@ fn spawn_from_queue(
     mut queueunit_evr: EventReader<QueueUnit>,
     mut commands: Commands,
     textures: Res<TextureAssets>,
+    mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
 ) {
     if let Some(entity) = ally_castle.0 {
         if let Ok(transform) = transforms.get(entity) {
@@ -209,23 +213,53 @@ fn spawn_from_queue(
                             ..Default::default()
                         },
                         texture: textures.bevy.clone(),
-                        transform: Transform::from_translation(
-                            translation + Vec3::new(128.0, 0.0, 0.0),
-                        ),
+                        transform: Transform::from_translation(translation),
                         ..Default::default()
                     })
+                    .insert(Behaviour::MoveToPoint(Vec2::new(
+                        0.0,
+                        (rng.next_u32() % 720) as f32 - 360.0,
+                    )))
+                    .insert(Health::new(100.0))
                     .insert(PhysicsCollisionBundle {
                         collider: Collider::ball(10.0),
                         ..Default::default()
                     })
-                    .insert(Behaviour::MoveToPoint(Vec2::new(1280.0, 0.0)))
-                    .insert(Health::new(100.0))
+                    .insert(Sensor)
+                    .insert(SpawnProtection::default())
+                    .insert(Faction::Ally);
+            }
+        }
+    }
+}
+
+/* Spawn with this instead */
+#[derive(Debug, Component)]
+pub struct SpawnProtection(Timer);
+
+impl Default for SpawnProtection {
+    fn default() -> Self {
+        Self(Timer::from_seconds(0.1, TimerMode::Once))
+    }
+}
+
+fn spawn_protection(
+    mut query: Query<(Entity, &CollidingEntities, &Faction, &mut SpawnProtection)>,
+    mut commands: Commands,
+    time: Res<Time>,
+) {
+    for (entity, colliding_entities, faction, mut spawn_protection) in &mut query {
+        if spawn_protection.0.tick(time.delta()).finished() && colliding_entities.is_empty() {
+            /* TODO: A bit janky if units with spawn protection overlap */
+            /* Now we can remove Sensor and SpawnProtection */
+            /* And add hurt and hitboxes and enemyfinder */
+            commands.entity(entity).remove::<Sensor>().remove::<SpawnProtection>()
                     .with_children(|children| {
                         children.spawn(HurtBoxBundle {
                             collider: Collider::ball(9.0),
                             collisionlayers: CollisionLayers::new(
-                                [Faction::Ally.hurt_layer()],
-                                [Faction::Ally.opposite().hit_layer()],
+                                [faction.hurt_layer()],
+                                [faction.opposite().hit_layer()],
                             ),
                             ..Default::default()
                         });
@@ -235,10 +269,10 @@ fn spawn_from_queue(
                                     damage: 10.0,
                                     kind: HitBoxKind::Once(vec![]),
                                 },
-                                collider: Collider::ball(12.0),
+                                collider: Collider::ball(12.0), /* TODO: Get these numbers from somewhere */
                                 collisionlayers: CollisionLayers::new(
-                                    [Faction::Ally.hit_layer()],
-                                    [Faction::Ally.opposite().hurt_layer()],
+                                    [faction.hit_layer()],
+                                    [faction.opposite().hurt_layer()],
                                 ),
                                 ..Default::default()
                             })
@@ -248,13 +282,12 @@ fn spawn_from_queue(
                         children.spawn(EnemyFinderBundle {
                             collider: Collider::ball(60.0),
                             collisionlayers: CollisionLayers::new(
-                                [Faction::Ally.hit_layer()],
-                                [Faction::Ally.opposite().hurt_layer()],
+                                [faction.hit_layer()],
+                                [faction.opposite().hurt_layer()],
                             ),
                             ..Default::default()
                         });
                     });
-            }
         }
     }
 }
