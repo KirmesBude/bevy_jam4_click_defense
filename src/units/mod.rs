@@ -8,7 +8,7 @@ use crate::{
     actions::{SpawnAlly, SpawnEnemy},
     attributes::Health,
     behaviour::{Behaviour, DefaultBehaviour, EnemyFinderBundle},
-    castle::MainCastle,
+    castle::AllyCastle,
     hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
     loading::TextureAssets,
     physics::{PhysicsCollisionBundle, SensorLayers},
@@ -135,7 +135,7 @@ pub fn spawn_enemy(
     mut commands: Commands,
     mut spawnenemy_evr: EventReader<SpawnEnemy>,
     textures: Res<TextureAssets>,
-    castle: Query<Entity, With<MainCastle>>,
+    castle: Res<AllyCastle>,
 ) {
     for ev in spawnenemy_evr.read() {
         println!("spawn enemy");
@@ -144,8 +144,10 @@ pub fn spawn_enemy(
             Faction::Enemy,
             ev.translation,
             &textures,
-            Behaviour::MoveAndAttack(castle.single()),
-            Some(DefaultBehaviour(Behaviour::MoveAndAttack(castle.single()))),
+            Behaviour::MoveAndAttack(castle.0.unwrap()),
+            Some(DefaultBehaviour(Behaviour::MoveAndAttack(
+                castle.0.unwrap(),
+            ))),
         );
     }
 }

@@ -12,23 +12,28 @@ pub struct CastlePlugin;
 #[derive(Component)]
 pub struct Castle;
 
-#[derive(Component)]
-pub struct MainCastle;
+#[derive(Debug, Default, Resource, Deref)]
+pub struct AllyCastle(pub Option<Entity>);
 
 #[derive(Component)]
-pub struct MainCastleHealthUI;
+pub struct AllyCastleHealthUI;
 
 /// This plugin handles castle related stuff like health ui
 /// Castle logic is only active during the State `GameState::Playing`
 impl Plugin for CastlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Playing), (spawn_castle, spawn_health_ui))
+        app.init_resource::<AllyCastle>()
+            .add_systems(OnEnter(GameState::Playing), (spawn_castle, spawn_health_ui))
             .add_systems(Update, (update_health).run_if(in_state(GameState::Playing)));
     }
 }
 
-fn spawn_castle(mut commands: Commands, textures: Res<TextureAssets>) {
-    commands
+fn spawn_castle(
+    mut commands: Commands,
+    textures: Res<TextureAssets>,
+    mut ally_castle: ResMut<AllyCastle>,
+) {
+    let entity = commands
         .spawn(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(256.0, 256.0)),
@@ -38,7 +43,7 @@ fn spawn_castle(mut commands: Commands, textures: Res<TextureAssets>) {
             transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
             ..Default::default()
         })
-        .insert((Castle, MainCastle))
+        .insert(Castle)
         .insert(Immortal)
         .insert(Health::new(1000.0))
         .insert(PhysicsCollisionBundle {
@@ -55,7 +60,10 @@ fn spawn_castle(mut commands: Commands, textures: Res<TextureAssets>) {
                 ),
                 ..Default::default()
             });
-        });
+        })
+        .id();
+
+    ally_castle.0 = Some(entity);
 }
 
 fn spawn_health_ui(mut commands: Commands) {
@@ -77,16 +85,19 @@ fn spawn_health_ui(mut commands: Commands) {
             justify_content: JustifyContent::Center,
             ..default()
         }),
-        MainCastleHealthUI,
+        AllyCastleHealthUI,
     ));
 }
 
 fn update_health(
-    castle_health: Query<&Health, (With<Castle>, With<MainCastle>)>,
-    mut castle_health_ui: Query<&mut Text, With<MainCastleHealthUI>>,
+    ally_castle: Res<AllyCastle>,
+    castle_healths: Query<&Health, With<Castle>>,
+    mut castle_health_ui: Query<&mut Text, With<AllyCastleHealthUI>>,
 ) {
-    let castle_health = castle_health.single();
-    let mut castle_health_ui = castle_health_ui.single_mut();
+    if let Some(entity) = ally_castle.0 {
+        let castle_health = castle_healths.get(entity).unwrap();
+        let mut castle_health_ui = castle_health_ui.single_mut();
 
-    castle_health_ui.sections[0].value = format!("{}", castle_health);
+        castle_health_ui.sections[0].value = format!("{}", castle_health);
+    }
 }
