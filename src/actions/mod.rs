@@ -16,7 +16,7 @@ impl Plugin for ActionsPlugin {
             .add_event::<SpawnAlly>()
             .add_systems(
                 Update,
-                emit_spawn_action.run_if(in_state(GameState::Playing)),
+                emit_spawn_action_mouse.run_if(in_state(GameState::Playing)),
             );
     }
 }
@@ -31,8 +31,7 @@ pub struct SpawnAlly {
     pub translation: Vec3,
 }
 
-/* TODO: Touch Controls */
-pub fn emit_spawn_action(
+pub fn emit_spawn_action_mouse(
     mut mousebtn_evr: EventReader<MouseButtonInput>,
     mut spawnally_evw: EventWriter<SpawnAlly>,
     mut spawnenemy_evw: EventWriter<SpawnEnemy>,

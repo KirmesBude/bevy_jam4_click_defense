@@ -7,7 +7,7 @@ use bevy_xpbd_2d::{
 use crate::{
     actions::{SpawnAlly, SpawnEnemy},
     attributes::Health,
-    behaviour::{Behaviour, EnemyFinderBundle, DefaultBehaviour},
+    behaviour::{Behaviour, DefaultBehaviour, EnemyFinderBundle},
     castle::MainCastle,
     hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
     loading::TextureAssets,
@@ -123,7 +123,8 @@ pub fn spawn_unit(
                 ),
                 ..Default::default()
             });
-        }).id();
+        })
+        .id();
 
     if let Some(default_behaviour) = default_behaviour {
         commands.entity(entity).insert(default_behaviour);

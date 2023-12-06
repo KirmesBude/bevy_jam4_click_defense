@@ -15,7 +15,7 @@ impl Plugin for BehaviourPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (behaviour, enemy_finder).run_if(in_state(GameState::Playing)),
+            (behaviour, behavior_added, enemy_finder).run_if(in_state(GameState::Playing)),
         );
     }
 }
@@ -23,14 +23,17 @@ impl Plugin for BehaviourPlugin {
 /* TODO: Add "DefaultBehaviour" Component */
 #[derive(Debug, Clone, Component)]
 pub enum Behaviour {
-    Wandering(Timer),
+    Wandering(Timer, LinearVelocity),
     MoveToPoint(Vec2),
     MoveAndAttack(Entity),
 }
 
 impl Default for Behaviour {
     fn default() -> Self {
-        Self::Wandering(Timer::from_seconds(2.5, TimerMode::Repeating))
+        Self::Wandering(
+            Timer::from_seconds(2.5, TimerMode::Repeating),
+            LinearVelocity::default(),
+        )
     }
 }
 
@@ -46,10 +49,14 @@ fn behaviour(
     time: Res<Time>,
     mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
 ) {
-    for (source_entity, mut velocity, mut behaviour, default_behaviour, colliding_entities) in query.iter_mut() {
+    for (source_entity, mut velocity, mut behaviour, default_behaviour, colliding_entities) in
+        query.iter_mut()
+    {
         let inner_behaviour = behaviour.as_mut();
         match inner_behaviour {
-            Behaviour::Wandering(ref mut timer) => wandering(&time, timer, &mut velocity, &mut rng),
+            Behaviour::Wandering(ref mut timer, ref mut saved_velocity) => {
+                wandering(&time, timer, &mut velocity, saved_velocity, &mut rng)
+            }
             Behaviour::MoveToPoint(dst_point) => {
                 let src_point = transforms
                     .get(source_entity)
@@ -86,6 +93,7 @@ fn wandering(
     time: &Time,
     timer: &mut Timer,
     velocity: &mut LinearVelocity,
+    saved_velocity: &mut LinearVelocity,
     rng: &mut GlobalEntropy<ChaCha8Rng>,
 ) {
     if timer.tick(time.delta()).just_finished() {
@@ -93,8 +101,10 @@ fn wandering(
             ((rng.next_u32() % 200) as f32 - 100.0) / 100.0,
             ((rng.next_u32() % 200) as f32 - 100.0) / 100.0,
         );
-        velocity.0 = vector * 20.0;
+        saved_velocity.0 = vector * 20.0;
     }
+
+    *velocity = *saved_velocity;
 }
 
 fn move_to_point(velocity: &mut LinearVelocity, src_point: &Vec2, dst_point: &Vec2) {
@@ -170,3 +180,18 @@ fn enemy_finder(
 
 #[derive(Debug, Default, Component)]
 pub struct DefaultBehaviour(pub Behaviour);
+
+fn behavior_added(
+    mut behaviours: Query<&mut Behaviour, Added<Behaviour>>,
+    mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
+) {
+    for mut behaviour in &mut behaviours {
+        if let Behaviour::Wandering(_, ref mut velocity) = behaviour.as_mut() {
+            let vector = Vec2::new(
+                ((rng.next_u32() % 200) as f32 - 100.0) / 100.0,
+                ((rng.next_u32() % 200) as f32 - 100.0) / 100.0,
+            );
+            velocity.0 = vector * 20.0;
+        }
+    }
+}
