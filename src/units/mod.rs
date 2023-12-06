@@ -7,7 +7,7 @@ use bevy_xpbd_2d::{
 use crate::{
     actions::{SpawnAlly, SpawnEnemy},
     attributes::Health,
-    behaviour::{Behaviour, EnemyFinderBundle},
+    behaviour::{Behaviour, EnemyFinderBundle, DefaultBehaviour},
     castle::MainCastle,
     hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
     loading::TextureAssets,
@@ -71,8 +71,9 @@ pub fn spawn_unit(
     translation: Vec3,
     textures: &Res<TextureAssets>,
     behaviour: Behaviour,
+    default_behaviour: Option<DefaultBehaviour>,
 ) {
-    commands
+    let entity = commands
         .spawn(SpriteBundle {
             sprite: Sprite {
                 color: faction.color(),
@@ -122,7 +123,11 @@ pub fn spawn_unit(
                 ),
                 ..Default::default()
             });
-        });
+        }).id();
+
+    if let Some(default_behaviour) = default_behaviour {
+        commands.entity(entity).insert(default_behaviour);
+    }
 }
 
 pub fn spawn_enemy(
@@ -139,6 +144,7 @@ pub fn spawn_enemy(
             ev.translation,
             &textures,
             Behaviour::MoveAndAttack(castle.single()),
+            Some(DefaultBehaviour(Behaviour::MoveAndAttack(castle.single()))),
         );
     }
 }
@@ -155,6 +161,7 @@ pub fn spawn_ally(
             ev.translation,
             &textures,
             Behaviour::default(),
+            None,
         );
     }
 }

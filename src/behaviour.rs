@@ -21,7 +21,7 @@ impl Plugin for BehaviourPlugin {
 }
 
 /* TODO: Add "DefaultBehaviour" Component */
-#[derive(Debug, Component)]
+#[derive(Debug, Clone, Component)]
 pub enum Behaviour {
     Wandering(Timer),
     MoveToPoint(Vec2),
@@ -39,13 +39,14 @@ fn behaviour(
         Entity,
         &mut LinearVelocity,
         &mut Behaviour,
+        Option<&DefaultBehaviour>,
         &CollidingEntities,
     )>,
     transforms: Query<&GlobalTransform>,
     time: Res<Time>,
     mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
 ) {
-    for (source_entity, mut velocity, mut behaviour, colliding_entities) in query.iter_mut() {
+    for (source_entity, mut velocity, mut behaviour, default_behaviour, colliding_entities) in query.iter_mut() {
         let inner_behaviour = behaviour.as_mut();
         match inner_behaviour {
             Behaviour::Wandering(ref mut timer) => wandering(&time, timer, &mut velocity, &mut rng),
@@ -74,7 +75,7 @@ fn behaviour(
                     );
                 } else {
                     velocity.0 = Vec2::ZERO;
-                    *behaviour = Behaviour::default(); /* TODO: Use "DefaultBehaviour" instead */
+                    *behaviour = default_behaviour.map_or(Behaviour::default(), |b| b.0.clone());
                 }
             }
         }
@@ -139,7 +140,7 @@ fn enemy_finder(
         {
             let src_point = src_transform.translation().truncate();
             /* Behaviour is Wandering and our EnemyFinder actually collides with somethings */
-            if matches!(*behaviour, Behaviour::Wandering(_)) && !colliding_entities.is_empty() {
+            if !colliding_entities.is_empty() {
                 /* Get the shortest distance Entity */
                 if let Some((target, _)) = colliding_entities
                     .iter()
@@ -166,3 +167,6 @@ fn enemy_finder(
         }
     }
 }
+
+#[derive(Debug, Default, Component)]
+pub struct DefaultBehaviour(pub Behaviour);
