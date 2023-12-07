@@ -30,10 +30,16 @@ impl Plugin for CastlePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AllyCastle>()
             .init_resource::<EnemyCastle>()
+            .init_resource::<UnitPoints>()
             .add_event::<SpawnUnit>()
             .add_systems(
                 OnEnter(GameState::Playing),
-                (spawn_ally_castle, spawn_enemy_castle, spawn_health_ui),
+                (
+                    spawn_ally_castle,
+                    spawn_enemy_castle,
+                    spawn_health_ui,
+                    init_unit_points,
+                ),
             )
             .add_systems(
                 Update,
@@ -206,11 +212,15 @@ fn process_queue_ally_unit(
     mut queueallyunit_evr: EventReader<QueueAllyUnit>,
     mut spawn_queue: Query<&mut SpawnQueue>,
     ally_castle: Res<AllyCastle>,
+    mut unit_points: ResMut<UnitPoints>,
 ) {
     for ev in queueallyunit_evr.read() {
-        if let Some(entity) = ally_castle.0 {
-            if let Ok(mut spawn_queue) = spawn_queue.get_mut(entity) {
-                spawn_queue.units.push_back(ev.kind);
+        if unit_points.0 > 0 {
+            if let Some(entity) = ally_castle.0 {
+                if let Ok(mut spawn_queue) = spawn_queue.get_mut(entity) {
+                    spawn_queue.units.push_back(ev.kind);
+                    unit_points.0 -= 1;
+                }
             }
         }
     }
@@ -228,4 +238,11 @@ fn game_over(
             }
         }
     }
+}
+
+#[derive(Debug, Default, Resource)]
+pub struct UnitPoints(pub usize);
+
+fn init_unit_points(mut unit_points: ResMut<UnitPoints>) {
+    unit_points.0 = 5;
 }

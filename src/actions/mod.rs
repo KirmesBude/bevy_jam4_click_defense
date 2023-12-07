@@ -52,9 +52,11 @@ pub fn emit_spawn_action_mouse(
             info!("{}", world_position);
 
             match ev.button {
+                /*
                 MouseButton::Left => spawnally_evw.send(SpawnAlly {
                     translation: world_position.extend(0.0),
                 }),
+                */
                 MouseButton::Middle => spawnenemy_evw.send(SpawnEnemy {
                     translation: world_position.extend(0.0),
                 }),

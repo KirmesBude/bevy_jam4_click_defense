@@ -6,6 +6,7 @@ mod audio;
 mod behaviour;
 mod castle;
 mod debug;
+mod game_ui;
 mod hit_detection;
 mod loading;
 mod menu;
@@ -27,6 +28,7 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_rand::{plugin::EntropyPlugin, prelude::ChaCha8Rng};
 use debug::DebugPlugin;
+use game_ui::GameUiPlugin;
 use hit_detection::HitDetectionPlugin;
 use physics::InternalPhysicsPlugin;
 use spawner::SpawnerPlugin;
@@ -66,6 +68,7 @@ impl Plugin for GamePlugin {
             SpawnerPlugin,
             EntropyPlugin::<ChaCha8Rng>::default(),
             BehaviourPlugin,
+            GameUiPlugin,
         ));
         #[cfg(debug_assertions)]
         {
