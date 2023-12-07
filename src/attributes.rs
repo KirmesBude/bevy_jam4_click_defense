@@ -18,8 +18,8 @@ impl Plugin for AttributesPlugin {
 
 #[derive(Debug, Component)]
 pub struct Health {
-    current: f32,
-    max: f32,
+    pub current: f32,
+    pub max: f32,
 }
 
 impl Health {

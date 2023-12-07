@@ -37,7 +37,12 @@ impl Plugin for CastlePlugin {
             )
             .add_systems(
                 Update,
-                (update_health, spawn_queue, process_queue_ally_unit)
+                (
+                    update_health,
+                    spawn_queue,
+                    process_queue_ally_unit,
+                    game_over,
+                )
                     .run_if(in_state(GameState::Playing)),
             );
     }
@@ -206,6 +211,20 @@ fn process_queue_ally_unit(
         if let Some(entity) = ally_castle.0 {
             if let Ok(mut spawn_queue) = spawn_queue.get_mut(entity) {
                 spawn_queue.units.push_back(ev.kind);
+            }
+        }
+    }
+}
+
+fn game_over(
+    health: Query<&Health>,
+    ally_castle: Res<AllyCastle>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if let Some(entity) = ally_castle.0 {
+        if let Ok(health) = health.get(entity) {
+            if health.current == 0.0 {
+                next_state.set(GameState::GameOver);
             }
         }
     }
