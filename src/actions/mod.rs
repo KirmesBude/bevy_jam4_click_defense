@@ -4,6 +4,7 @@ use bevy::input::ButtonState;
 use bevy::prelude::*;
 
 use crate::actions::game_control::viewport_to_world_position;
+use crate::units::UnitKind;
 use crate::GameState;
 
 mod game_control;
@@ -16,10 +17,11 @@ impl Plugin for ActionsPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SpawnEnemy>()
             .add_event::<SpawnAlly>()
-            .add_event::<QueueUnit>()
+            .add_event::<QueueAllyUnit>()
             .add_systems(
                 Update,
-                (emit_spawn_action_mouse, emit_queue_unit).run_if(in_state(GameState::Playing)),
+                (emit_spawn_action_mouse, emit_queue_ally_unit)
+                    .run_if(in_state(GameState::Playing)),
             );
     }
 }
@@ -63,16 +65,20 @@ pub fn emit_spawn_action_mouse(
 }
 
 #[derive(Debug, Event)]
-pub struct QueueUnit {}
+pub struct QueueAllyUnit {
+    pub kind: UnitKind,
+}
 
-pub fn emit_queue_unit(
+pub fn emit_queue_ally_unit(
     mut keyboard_evr: EventReader<KeyboardInput>,
-    mut queueunit_evw: EventWriter<QueueUnit>,
+    mut queueunit_evw: EventWriter<QueueAllyUnit>,
 ) {
     for ev in keyboard_evr.read() {
         if let Some(KeyCode::Space) = ev.key_code {
             if ev.state == ButtonState::Pressed {
-                queueunit_evw.send(QueueUnit {});
+                queueunit_evw.send(QueueAllyUnit {
+                    kind: UnitKind::Soldier,
+                });
             }
         }
     }

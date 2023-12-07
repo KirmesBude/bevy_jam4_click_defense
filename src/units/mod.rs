@@ -1,16 +1,13 @@
 use bevy::prelude::*;
 use bevy_rand::{prelude::ChaCha8Rng, resource::GlobalEntropy};
-use bevy_xpbd_2d::{
-    components::{Collider, CollidingEntities, CollisionLayers, Sensor},
-    prelude::PhysicsLayer,
-};
+use bevy_xpbd_2d::components::{Collider, CollidingEntities, CollisionLayers, Sensor};
 use rand_core::RngCore;
 
 use crate::{
-    actions::{QueueUnit, SpawnAlly, SpawnEnemy},
+    actions::{SpawnAlly, SpawnEnemy},
     attributes::Health,
     behaviour::{Behaviour, DefaultBehaviour, EnemyFinderBundle},
-    castle::AllyCastle,
+    castle::{AllyCastle, SpawnUnit},
     hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
     loading::TextureAssets,
     physics::{PhysicsCollisionBundle, SensorLayers},
@@ -29,7 +26,7 @@ impl Plugin for UnitPluging {
                 spawn_ally,
                 spawn_enemy,
                 advance_attack_cooldown_timer,
-                spawn_from_queue,
+                spawn_unit_from_event,
                 spawn_protection,
             )
                 .run_if(in_state(GameState::Playing)),
@@ -37,7 +34,7 @@ impl Plugin for UnitPluging {
     }
 }
 
-#[derive(Debug, Component, Clone, Copy, PhysicsLayer)]
+#[derive(Debug, Component, Clone, Copy)]
 pub enum Faction {
     Ally,
     Enemy,
@@ -193,42 +190,41 @@ fn advance_attack_cooldown_timer(
     }
 }
 
-fn spawn_from_queue(
-    ally_castle: Res<AllyCastle>,
+fn spawn_unit_from_event(
+    mut spawnunit_evr: EventReader<SpawnUnit>,
     transforms: Query<&GlobalTransform>,
-    mut queueunit_evr: EventReader<QueueUnit>,
     mut commands: Commands,
     textures: Res<TextureAssets>,
     mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
 ) {
-    if let Some(entity) = ally_castle.0 {
-        if let Ok(transform) = transforms.get(entity) {
+    for ev in spawnunit_evr.read() {
+        eprintln!("lol");
+        if let Ok(transform) = transforms.get(ev.origin) {
             let translation = transform.translation();
-            for ev in queueunit_evr.read() {
-                commands
-                    .spawn(SpriteBundle {
-                        sprite: Sprite {
-                            color: Faction::Ally.color(),
-                            custom_size: Some(Vec2::new(20.0, 20.0)),
-                            ..Default::default()
-                        },
-                        texture: textures.bevy.clone(),
-                        transform: Transform::from_translation(translation),
+
+            commands
+                .spawn(SpriteBundle {
+                    sprite: Sprite {
+                        color: ev.faction.color(),
+                        custom_size: Some(Vec2::new(20.0, 20.0)),
                         ..Default::default()
-                    })
-                    .insert(Behaviour::MoveToPoint(Vec2::new(
-                        0.0,
-                        (rng.next_u32() % 720) as f32 - 360.0,
-                    )))
-                    .insert(Health::new(100.0))
-                    .insert(PhysicsCollisionBundle {
-                        collider: Collider::ball(10.0),
-                        ..Default::default()
-                    })
-                    .insert(Sensor)
-                    .insert(SpawnProtection::default())
-                    .insert(Faction::Ally);
-            }
+                    },
+                    texture: textures.bevy.clone(),
+                    transform: Transform::from_translation(translation),
+                    ..Default::default()
+                })
+                .insert(Behaviour::MoveToPoint(Vec2::new(
+                    0.0,
+                    (rng.next_u32() % 720) as f32 - 360.0,
+                )))
+                .insert(Health::new(100.0))
+                .insert(PhysicsCollisionBundle {
+                    collider: Collider::ball(10.0),
+                    ..Default::default()
+                })
+                .insert(Sensor)
+                .insert(SpawnProtection::default())
+                .insert(ev.faction);
         }
     }
 }
@@ -290,4 +286,9 @@ fn spawn_protection(
                     });
         }
     }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum UnitKind {
+    Soldier,
 }

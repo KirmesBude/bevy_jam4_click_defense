@@ -1,8 +1,11 @@
+use std::collections::VecDeque;
+
+use crate::actions::QueueAllyUnit;
 use crate::attributes::{Health, Immortal};
 use crate::hit_detection::HurtBoxBundle;
 use crate::loading::TextureAssets;
 use crate::physics::PhysicsCollisionBundle;
-use crate::units::Faction;
+use crate::units::{Faction, UnitKind};
 use crate::GameState;
 use bevy::prelude::*;
 use bevy_xpbd_2d::components::{Collider, CollisionLayers, RigidBody};
@@ -15,6 +18,9 @@ pub struct Castle;
 #[derive(Debug, Default, Resource, Deref)]
 pub struct AllyCastle(pub Option<Entity>);
 
+#[derive(Debug, Default, Resource, Deref)]
+pub struct EnemyCastle(pub Option<Entity>);
+
 #[derive(Component)]
 pub struct AllyCastleHealthUI;
 
@@ -23,11 +29,17 @@ pub struct AllyCastleHealthUI;
 impl Plugin for CastlePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AllyCastle>()
+            .init_resource::<EnemyCastle>()
+            .add_event::<SpawnUnit>()
             .add_systems(
                 OnEnter(GameState::Playing),
                 (spawn_ally_castle, spawn_enemy_castle, spawn_health_ui),
             )
-            .add_systems(Update, (update_health).run_if(in_state(GameState::Playing)));
+            .add_systems(
+                Update,
+                (update_health, spawn_queue, process_queue_ally_unit)
+                    .run_if(in_state(GameState::Playing)),
+            );
     }
 }
 
@@ -55,6 +67,7 @@ fn spawn_ally_castle(
             collider: Collider::ball(128.0),
             ..Default::default()
         })
+        .insert(SpawnQueue::default())
         .with_children(|children| {
             children.spawn(HurtBoxBundle {
                 collider: Collider::ball(127.0),
@@ -70,8 +83,12 @@ fn spawn_ally_castle(
     ally_castle.0 = Some(entity);
 }
 
-fn spawn_enemy_castle(mut commands: Commands, textures: Res<TextureAssets>) {
-    commands
+fn spawn_enemy_castle(
+    mut commands: Commands,
+    textures: Res<TextureAssets>,
+    mut enemy_castle: ResMut<EnemyCastle>,
+) {
+    let entity = commands
         .spawn(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(256.0, 256.0)),
@@ -90,6 +107,7 @@ fn spawn_enemy_castle(mut commands: Commands, textures: Res<TextureAssets>) {
             collider: Collider::ball(128.0),
             ..Default::default()
         })
+        .insert(SpawnQueue::default())
         .with_children(|children| {
             children.spawn(HurtBoxBundle {
                 collider: Collider::ball(127.0),
@@ -99,7 +117,10 @@ fn spawn_enemy_castle(mut commands: Commands, textures: Res<TextureAssets>) {
                 ),
                 ..Default::default()
             });
-        });
+        })
+        .id();
+
+    enemy_castle.0 = Some(entity);
 }
 
 fn spawn_health_ui(mut commands: Commands) {
@@ -135,5 +156,57 @@ fn update_health(
         let mut castle_health_ui = castle_health_ui.single_mut();
 
         castle_health_ui.sections[0].value = format!("{}", castle_health);
+    }
+}
+
+#[derive(Debug, Component)]
+pub struct SpawnQueue {
+    pub timer: Timer,
+    pub units: VecDeque<UnitKind>,
+}
+
+impl Default for SpawnQueue {
+    fn default() -> Self {
+        Self {
+            timer: Timer::from_seconds(2.0, TimerMode::Repeating),
+            units: Default::default(),
+        }
+    }
+}
+
+fn spawn_queue(
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut SpawnQueue, &Faction)>,
+    mut spawnunit_evw: EventWriter<SpawnUnit>,
+) {
+    for (origin, mut spawn_queue, faction) in &mut query {
+        if !spawn_queue.units.is_empty() && spawn_queue.timer.tick(time.delta()).just_finished() {
+            spawnunit_evw.send(SpawnUnit {
+                origin,
+                faction: *faction,
+                kind: spawn_queue.units.pop_front().unwrap(),
+            });
+        }
+    }
+}
+
+#[derive(Debug, Event)]
+pub struct SpawnUnit {
+    pub origin: Entity,
+    pub faction: Faction,
+    pub kind: UnitKind,
+}
+
+fn process_queue_ally_unit(
+    mut queueallyunit_evr: EventReader<QueueAllyUnit>,
+    mut spawn_queue: Query<&mut SpawnQueue>,
+    ally_castle: Res<AllyCastle>,
+) {
+    for ev in queueallyunit_evr.read() {
+        if let Some(entity) = ally_castle.0 {
+            if let Ok(mut spawn_queue) = spawn_queue.get_mut(entity) {
+                spawn_queue.units.push_back(ev.kind);
+            }
+        }
     }
 }
