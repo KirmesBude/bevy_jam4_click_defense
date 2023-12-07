@@ -7,7 +7,7 @@ use crate::{
     actions::{SpawnAlly, SpawnEnemy},
     attributes::Health,
     behaviour::{Behaviour, DefaultBehaviour, EnemyFinderBundle},
-    castle::{AllyCastle, SpawnUnit},
+    castle::{AllyCastle, EnemyCastle, SpawnUnit},
     hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
     loading::TextureAssets,
     physics::{PhysicsCollisionBundle, SensorLayers},
@@ -198,7 +198,6 @@ fn spawn_unit_from_event(
     mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
 ) {
     for ev in spawnunit_evr.read() {
-        eprintln!("lol");
         if let Ok(transform) = transforms.get(ev.origin) {
             let translation = transform.translation();
 
@@ -240,16 +239,30 @@ impl Default for SpawnProtection {
 }
 
 fn spawn_protection(
-    mut query: Query<(Entity, &CollidingEntities, &Faction, &mut SpawnProtection)>,
+    mut query: Query<(
+        Entity,
+        &CollidingEntities,
+        &Faction,
+        &mut SpawnProtection,
+        &mut Behaviour,
+    )>,
     mut commands: Commands,
     time: Res<Time>,
+    ally_castle: Res<AllyCastle>,
+    enemy_castle: Res<EnemyCastle>,
 ) {
-    for (entity, colliding_entities, faction, mut spawn_protection) in &mut query {
+    for (entity, colliding_entities, faction, mut spawn_protection, mut behaviour) in &mut query {
         if spawn_protection.0.tick(time.delta()).finished() && colliding_entities.is_empty() {
+            *behaviour = match faction {
+                Faction::Ally => Behaviour::MoveAndAttack(enemy_castle.0.unwrap()),
+                Faction::Enemy => Behaviour::MoveAndAttack(ally_castle.0.unwrap()),
+            };
+
             /* TODO: A bit janky if units with spawn protection overlap */
             /* Now we can remove Sensor and SpawnProtection */
             /* And add hurt and hitboxes and enemyfinder */
             commands.entity(entity).remove::<Sensor>().remove::<SpawnProtection>()
+            .insert(DefaultBehaviour(behaviour.clone()))
                     .with_children(|children| {
                         children.spawn(HurtBoxBundle {
                             collider: Collider::ball(9.0),

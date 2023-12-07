@@ -66,7 +66,7 @@ fn die(
             commands.entity(entity).despawn_recursive();
 
             if let Faction::Enemy = faction {
-                unit_points.0 += 1;
+                unit_points.0 += 2;
             }
         }
     }
