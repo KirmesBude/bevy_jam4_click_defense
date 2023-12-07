@@ -29,19 +29,19 @@ fn setup_game_ui(mut commands: Commands, unit_points: Res<UnitPoints>) {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
                 flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
+                align_items: AlignItems::FlexStart,
                 justify_content: JustifyContent::Center,
                 ..default()
             },
             ..default()
-        },))
+        },))/* TODO: Another NodeBundle for FlexDirection Row */
         .with_children(|children| {
             children
                 .spawn((
                     ButtonBundle {
                         style: Style {
-                            width: Val::Px(140.0),
-                            height: Val::Px(50.0),
+                            width: Val::Px(200.0),
+                            height: Val::Px(100.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
                             ..Default::default()
