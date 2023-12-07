@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::{fmt::Display, ops::Add};
 
-use crate::GameState;
+use crate::{castle::UnitPoints, units::Faction, GameState};
 
 pub struct AttributesPlugin;
 
@@ -58,11 +58,16 @@ fn apply_health_delta(
 
 fn die(
     mut commands: Commands,
-    health_query: Query<(Entity, &Health), (Changed<Health>, Without<Immortal>)>,
+    health_query: Query<(Entity, &Health, &Faction), (Changed<Health>, Without<Immortal>)>,
+    mut unit_points: ResMut<UnitPoints>,
 ) {
-    for (entity, health) in &health_query {
+    for (entity, health, faction) in &health_query {
         if health.current == 0.0 {
             commands.entity(entity).despawn_recursive();
+
+            if let Faction::Enemy = faction {
+                unit_points.0 += 1;
+            }
         }
     }
 }

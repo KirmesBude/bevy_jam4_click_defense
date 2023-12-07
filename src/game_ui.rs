@@ -34,7 +34,7 @@ fn setup_game_ui(mut commands: Commands, unit_points: Res<UnitPoints>) {
                 ..default()
             },
             ..default()
-        },))/* TODO: Another NodeBundle for FlexDirection Row */
+        },)) /* TODO: Another NodeBundle for FlexDirection Row */
         .with_children(|children| {
             children
                 .spawn((
