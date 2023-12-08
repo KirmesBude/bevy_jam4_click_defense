@@ -14,7 +14,8 @@ impl Plugin for LoadingPlugin {
             LoadingState::new(GameState::Loading).continue_to_state(GameState::Menu),
         )
         .add_collection_to_loading_state::<_, AudioAssets>(GameState::Loading)
-        .add_collection_to_loading_state::<_, TextureAssets>(GameState::Loading);
+        .add_collection_to_loading_state::<_, TextureAssets>(GameState::Loading)
+        .add_collection_to_loading_state::<_, UiAssets>(GameState::Loading);
     }
 }
 
@@ -39,4 +40,12 @@ pub struct TextureAssets {
     pub ally_soldier: Handle<Image>,
     #[asset(path = "textures/enemy_soldier.png")]
     pub enemy_soldier: Handle<Image>,
+}
+
+#[derive(AssetCollection, Resource)]
+pub struct UiAssets {
+    #[asset(path = "textures/soldier_button.png")]
+    pub soldier_button: Handle<Image>,
+    #[asset(path = "textures/tech_castle_button.png")]
+    pub tech_castle_button: Handle<Image>,
 }

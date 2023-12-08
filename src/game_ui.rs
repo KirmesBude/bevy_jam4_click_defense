@@ -1,6 +1,7 @@
 use crate::{
     actions::QueueAllyUnit,
     castle::{AllyCastle, UnitPoints},
+    loading::UiAssets,
     techtree::SpawnCooldownReduction,
     units::UnitKind,
     GameState,
@@ -33,16 +34,17 @@ struct SpawnButton(pub UnitKind);
 #[derive(Debug, Default, Component)]
 struct SpawnButtonText;
 
-fn setup_game_ui(mut commands: Commands, unit_points: Res<UnitPoints>) {
+fn setup_game_ui(mut commands: Commands, unit_points: Res<UnitPoints>, ui_assets: Res<UiAssets>) {
     info!("game_ui");
     commands
         .spawn((NodeBundle {
             style: Style {
-                width: Val::Percent(100.0),
+                width: Val::Percent(20.0),
                 height: Val::Percent(100.0),
+                left: Val::Percent(1.0),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::FlexStart,
-                justify_content: JustifyContent::Center,
+                justify_content: JustifyContent::SpaceEvenly,
                 ..default()
             },
             ..default()
@@ -52,13 +54,14 @@ fn setup_game_ui(mut commands: Commands, unit_points: Res<UnitPoints>) {
                 .spawn((
                     ButtonBundle {
                         style: Style {
-                            width: Val::Px(200.0),
-                            height: Val::Px(100.0),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
+                            width: Val::Px(128.0),
+                            height: Val::Px(128.0),
+                            flex_direction: FlexDirection::Row,
+                            justify_content: JustifyContent::SpaceBetween,
+                            align_items: AlignItems::FlexStart,
                             ..Default::default()
                         },
-                        background_color: Color::BLUE.into(),
+                        image: ui_assets.soldier_button.clone().into(),
                         ..Default::default()
                     },
                     SpawnButton(UnitKind::Soldier),
@@ -66,27 +69,36 @@ fn setup_game_ui(mut commands: Commands, unit_points: Res<UnitPoints>) {
                 .with_children(|parent| {
                     parent
                         .spawn(TextBundle::from_section(
-                            format!("Soldier ({})", unit_points.0),
+                            format!("{}", unit_points.0),
                             TextStyle {
-                                font_size: 40.0,
+                                font_size: 30.0,
                                 color: Color::rgb(0.9, 0.9, 0.9),
                                 ..default()
                             },
                         ))
                         .insert(SpawnButtonText);
+                    parent.spawn(TextBundle::from_section(
+                        format!("{}", 1),
+                        TextStyle {
+                            font_size: 30.0,
+                            color: Color::rgb(0.9, 0.9, 0.0),
+                            ..default()
+                        },
+                    ));
                 });
 
             children
                 .spawn((
                     ButtonBundle {
                         style: Style {
-                            width: Val::Px(200.0),
-                            height: Val::Px(100.0),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
+                            width: Val::Px(128.0),
+                            height: Val::Px(128.0),
+                            flex_direction: FlexDirection::Row,
+                            justify_content: JustifyContent::SpaceBetween,
+                            align_items: AlignItems::FlexStart,
                             ..Default::default()
                         },
-                        background_color: Color::GREEN.into(),
+                        image: ui_assets.tech_castle_button.clone().into(),
                         ..Default::default()
                     },
                     SpawnCooldownReductionButton,
@@ -94,14 +106,22 @@ fn setup_game_ui(mut commands: Commands, unit_points: Res<UnitPoints>) {
                 .with_children(|parent| {
                     parent
                         .spawn(TextBundle::from_section(
-                            format!("Tech cd ({})", 0),
+                            format!("{}", 0),
                             TextStyle {
-                                font_size: 40.0,
+                                font_size: 30.0,
                                 color: Color::rgb(0.9, 0.9, 0.9),
                                 ..default()
                             },
                         ))
                         .insert(SpawnCooldownReductionButtonText);
+                    parent.spawn(TextBundle::from_section(
+                        format!("{}", 5),
+                        TextStyle {
+                            font_size: 30.0,
+                            color: Color::rgb(0.9, 0.9, 0.0),
+                            ..default()
+                        },
+                    ));
                 });
         });
 }
@@ -131,7 +151,7 @@ fn update_spawn_button_text(
     unit_points: Res<UnitPoints>,
 ) {
     for mut text in &mut query {
-        text.sections[0].value = format!("Soldier ({})", unit_points.0);
+        text.sections[0].value = format!("{}", unit_points.0);
     }
 }
 
@@ -168,7 +188,7 @@ fn update_spawn_cooldown_reduction_button(
     for mut text in &mut query {
         if let Some(entity) = ally_castle.0 {
             if let Ok(spawn_cooldown_reduction) = spawn_cooldown_reduction.get(entity) {
-                text.sections[0].value = format!("Tech cd ({})", spawn_cooldown_reduction.level);
+                text.sections[0].value = format!("{}", spawn_cooldown_reduction.level);
             }
         }
     }
