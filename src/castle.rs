@@ -5,6 +5,7 @@ use crate::attributes::{Health, Immortal};
 use crate::hit_detection::HurtBoxBundle;
 use crate::loading::TextureAssets;
 use crate::physics::PhysicsCollisionBundle;
+use crate::techtree::SpawnCooldownReduction;
 use crate::units::{Faction, UnitKind};
 use crate::GameState;
 use bevy::prelude::*;
@@ -79,6 +80,7 @@ fn spawn_ally_castle(
             ..Default::default()
         })
         .insert(SpawnQueue::default())
+        .insert(SpawnCooldownReduction::default())
         .with_children(|children| {
             children.spawn(HurtBoxBundle {
                 collider: Collider::ball(127.0),
@@ -119,6 +121,7 @@ fn spawn_enemy_castle(
             ..Default::default()
         })
         .insert(SpawnQueue::default())
+        .insert(SpawnCooldownReduction::default())
         .with_children(|children| {
             children.spawn(HurtBoxBundle {
                 collider: Collider::ball(127.0),

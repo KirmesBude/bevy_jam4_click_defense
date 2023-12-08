@@ -12,6 +12,7 @@ mod loading;
 mod menu;
 mod physics;
 mod spawner;
+mod techtree;
 mod units;
 
 use crate::actions::ActionsPlugin;
@@ -32,6 +33,7 @@ use game_ui::GameUiPlugin;
 use hit_detection::HitDetectionPlugin;
 use physics::InternalPhysicsPlugin;
 use spawner::SpawnerPlugin;
+use techtree::TechtreePlugin;
 use units::UnitPluging;
 
 // This example game uses States to separate logic
@@ -68,6 +70,7 @@ impl Plugin for GamePlugin {
             EntropyPlugin::<ChaCha8Rng>::default(),
             BehaviourPlugin,
             GameUiPlugin,
+            TechtreePlugin,
         ));
         #[cfg(debug_assertions)]
         {
