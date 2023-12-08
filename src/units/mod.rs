@@ -41,13 +41,6 @@ pub enum Faction {
 }
 
 impl Faction {
-    pub fn color(&self) -> Color {
-        match self {
-            Self::Ally => Color::BLUE,
-            Self::Enemy => Color::RED,
-        }
-    }
-
     pub fn opposite(&self) -> Self {
         match self {
             Self::Ally => Self::Enemy,
@@ -81,11 +74,10 @@ pub fn spawn_unit(
     let entity = commands
         .spawn(SpriteBundle {
             sprite: Sprite {
-                color: faction.color(),
                 custom_size: Some(Vec2::new(20.0, 20.0)),
                 ..Default::default()
             },
-            texture: textures.bevy.clone(),
+            texture: textures.enemy_soldier.clone(),
             transform: Transform::from_translation(translation),
             ..Default::default()
         })
@@ -204,11 +196,10 @@ fn spawn_unit_from_event(
             commands
                 .spawn(SpriteBundle {
                     sprite: Sprite {
-                        color: ev.faction.color(),
                         custom_size: Some(Vec2::new(20.0, 20.0)),
                         ..Default::default()
                     },
-                    texture: textures.bevy.clone(),
+                    texture: ev.kind.texture(&ev.faction, &textures),
                     transform: Transform::from_translation(translation),
                     ..Default::default()
                 })
@@ -304,4 +295,15 @@ fn spawn_protection(
 #[derive(Debug, Clone, Copy)]
 pub enum UnitKind {
     Soldier,
+}
+
+impl UnitKind {
+    pub fn texture(&self, faction: &Faction, texture_assets: &TextureAssets) -> Handle<Image> {
+        match self {
+            UnitKind::Soldier => match faction {
+                Faction::Ally => texture_assets.ally_soldier.clone(),
+                Faction::Enemy => texture_assets.enemy_soldier.clone(),
+            },
+        }
+    }
 }

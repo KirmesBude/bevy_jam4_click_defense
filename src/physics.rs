@@ -11,8 +11,12 @@ pub struct InternalPhysicsPlugin;
 // This plugin is responsible to control the game audio
 impl Plugin for InternalPhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((PhysicsPlugins::default(), PhysicsDebugPlugin::default()))
+        app.add_plugins(PhysicsPlugins::default())
             .insert_resource(Gravity::ZERO);
+        #[cfg(debug_assertions)]
+        {
+            app.add_plugins(PhysicsDebugPlugin::default());
+        }
     }
 }
 

@@ -65,7 +65,7 @@ fn spawn_ally_castle(
                 custom_size: Some(Vec2::new(256.0, 256.0)),
                 ..Default::default()
             },
-            texture: textures.bevy.clone(),
+            texture: textures.castle.clone(),
             transform: Transform::from_translation(Vec3::new(-1280.0 / 2.0, 0., 1.)),
             ..Default::default()
         })
@@ -105,7 +105,7 @@ fn spawn_enemy_castle(
                 custom_size: Some(Vec2::new(256.0, 256.0)),
                 ..Default::default()
             },
-            texture: textures.bevy.clone(),
+            texture: textures.castle.clone(),
             transform: Transform::from_translation(Vec3::new(1280.0 / 2.0, 0., 1.)),
             ..Default::default()
         })

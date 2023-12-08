@@ -62,7 +62,6 @@ impl Plugin for GamePlugin {
             CastlePlugin,
             UnitPluging,
             AttributesPlugin,
-            DebugPlugin,
             InternalPhysicsPlugin,
             HitDetectionPlugin,
             SpawnerPlugin,
@@ -72,7 +71,11 @@ impl Plugin for GamePlugin {
         ));
         #[cfg(debug_assertions)]
         {
-            app.add_plugins((FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin::default()));
+            app.add_plugins((
+                FrameTimeDiagnosticsPlugin,
+                LogDiagnosticsPlugin::default(),
+                DebugPlugin,
+            ));
         }
     }
 }
