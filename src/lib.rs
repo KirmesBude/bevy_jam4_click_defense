@@ -1,6 +1,5 @@
 #![allow(clippy::type_complexity)]
 
-mod actions;
 mod attributes;
 mod audio;
 mod behaviour;
@@ -15,7 +14,6 @@ mod spawner;
 mod techtree;
 mod units;
 
-use crate::actions::ActionsPlugin;
 use crate::audio::InternalAudioPlugin;
 use crate::castle::CastlePlugin;
 use crate::loading::LoadingPlugin;
@@ -59,7 +57,6 @@ impl Plugin for GamePlugin {
         app.add_state::<GameState>().add_plugins((
             LoadingPlugin,
             MenuPlugin,
-            ActionsPlugin,
             InternalAudioPlugin,
             CastlePlugin,
             UnitPluging,

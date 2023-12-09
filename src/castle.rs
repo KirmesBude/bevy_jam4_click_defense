@@ -1,6 +1,5 @@
 use std::collections::VecDeque;
 
-use crate::actions::QueueAllyUnit;
 use crate::attributes::{Health, Immortal};
 use crate::hit_detection::HurtBoxBundle;
 use crate::loading::TextureAssets;
@@ -8,6 +7,8 @@ use crate::physics::PhysicsCollisionBundle;
 use crate::techtree::SpawnCooldownReduction;
 use crate::units::{Faction, UnitKind};
 use crate::GameState;
+use bevy::input::keyboard::KeyboardInput;
+use bevy::input::ButtonState;
 use bevy::prelude::*;
 use bevy_xpbd_2d::components::{Collider, CollisionLayers, RigidBody};
 
@@ -33,6 +34,7 @@ impl Plugin for CastlePlugin {
             .init_resource::<EnemyCastle>()
             .init_resource::<UnitPoints>()
             .add_event::<SpawnUnit>()
+            .add_event::<QueueAllyUnit>()
             .add_systems(
                 OnEnter(GameState::Playing),
                 (
@@ -49,6 +51,7 @@ impl Plugin for CastlePlugin {
                     spawn_queue,
                     process_queue_ally_unit,
                     game_over,
+                    emit_queue_enemy_unit,
                 )
                     .run_if(in_state(GameState::Playing)),
             );
@@ -248,4 +251,24 @@ pub struct UnitPoints(pub usize);
 
 fn init_unit_points(mut unit_points: ResMut<UnitPoints>) {
     unit_points.0 = 5;
+}
+
+#[derive(Debug, Event)]
+pub struct QueueAllyUnit {
+    pub kind: UnitKind,
+}
+
+fn emit_queue_enemy_unit(
+    mut keyboard_evr: EventReader<KeyboardInput>,
+    mut queueunit_evw: EventWriter<QueueAllyUnit>,
+) {
+    for ev in keyboard_evr.read() {
+        if let Some(KeyCode::Space) = ev.key_code {
+            if ev.state == ButtonState::Pressed {
+                queueunit_evw.send(QueueAllyUnit {
+                    kind: UnitKind::Soldier,
+                });
+            }
+        }
+    }
 }

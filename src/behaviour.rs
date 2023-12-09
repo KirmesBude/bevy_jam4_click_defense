@@ -17,7 +17,13 @@ impl Plugin for BehaviourPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (behaviour, behavior_added, enemy_finder, face_velocity_vector).run_if(in_state(GameState::Playing)),
+            (
+                behaviour,
+                behavior_added,
+                enemy_finder,
+                face_velocity_vector,
+            )
+                .run_if(in_state(GameState::Playing)),
         );
     }
 }
@@ -205,12 +211,9 @@ fn behavior_added(
     }
 }
 
-fn face_velocity_vector(
-    mut query: Query<(&mut Transform, &LinearVelocity)>
-) {
+fn face_velocity_vector(mut query: Query<(&mut Transform, &LinearVelocity)>) {
     for (mut transform, velocity) in &mut query {
-        let angle = velocity.0.y.atan2(velocity.0.x)+FRAC_PI_2; // Add/sub FRAC_PI here optionally
+        let angle = velocity.0.y.atan2(velocity.0.x) + FRAC_PI_2; // Add/sub FRAC_PI here optionally
         transform.rotation = Quat::from_axis_angle(Vec3::Z, angle);
-
     }
 }

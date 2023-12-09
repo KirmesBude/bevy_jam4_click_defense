@@ -4,7 +4,6 @@ use bevy_xpbd_2d::components::{Collider, CollidingEntities, CollisionLayers, Sen
 use rand_core::RngCore;
 
 use crate::{
-    actions::{SpawnAlly, SpawnEnemy},
     attributes::Health,
     behaviour::{Behaviour, DefaultBehaviour, EnemyFinderBundle},
     castle::{AllyCastle, EnemyCastle, SpawnUnit},
@@ -23,8 +22,6 @@ impl Plugin for UnitPluging {
         app.add_systems(
             Update,
             (
-                spawn_ally,
-                spawn_enemy,
                 advance_attack_cooldown_timer,
                 spawn_unit_from_event,
                 spawn_protection,
@@ -63,112 +60,9 @@ impl Faction {
     }
 }
 
-pub fn spawn_unit(
-    commands: &mut Commands,
-    faction: Faction,
-    translation: Vec3,
-    textures: &Res<TextureAssets>,
-    behaviour: Behaviour,
-    default_behaviour: Option<DefaultBehaviour>,
-) {
-    let entity = commands
-        .spawn(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(20.0, 20.0)),
-                ..Default::default()
-            },
-            texture: textures.enemy_soldier.clone(),
-            transform: Transform::from_translation(translation),
-            ..Default::default()
-        })
-        .insert(PhysicsCollisionBundle {
-            collider: Collider::ball(10.0),
-            ..Default::default()
-        })
-        .insert(behaviour)
-        .insert(Health::new(100.0))
-        .with_children(|children| {
-            children.spawn(HurtBoxBundle {
-                collider: Collider::ball(9.0),
-                collisionlayers: CollisionLayers::new(
-                    [faction.hurt_layer()],
-                    [faction.opposite().hit_layer()],
-                ),
-                ..Default::default()
-            });
-            children
-                .spawn(HitBoxBundle {
-                    hitbox: HitBox {
-                        damage: 10.0,
-                        kind: HitBoxKind::Once(vec![]),
-                    },
-                    collider: Collider::ball(12.0),
-                    collisionlayers: CollisionLayers::new(
-                        [faction.hit_layer()],
-                        [faction.opposite().hurt_layer()],
-                    ),
-                    ..Default::default()
-                })
-                .insert(AttackCooldown {
-                    timer: Timer::from_seconds(1.0, TimerMode::Repeating),
-                });
-            children.spawn(EnemyFinderBundle {
-                collider: Collider::ball(60.0),
-                collisionlayers: CollisionLayers::new(
-                    [faction.hit_layer()],
-                    [faction.opposite().hurt_layer()],
-                ),
-                ..Default::default()
-            });
-        })
-        .id();
-
-    if let Some(default_behaviour) = default_behaviour {
-        commands.entity(entity).insert(default_behaviour);
-    }
-}
-
-pub fn spawn_enemy(
-    mut commands: Commands,
-    mut spawnenemy_evr: EventReader<SpawnEnemy>,
-    textures: Res<TextureAssets>,
-    castle: Res<AllyCastle>,
-) {
-    for ev in spawnenemy_evr.read() {
-        println!("spawn enemy");
-        spawn_unit(
-            &mut commands,
-            Faction::Enemy,
-            ev.translation,
-            &textures,
-            Behaviour::MoveAndAttack(castle.0.unwrap()),
-            Some(DefaultBehaviour(Behaviour::MoveAndAttack(
-                castle.0.unwrap(),
-            ))),
-        );
-    }
-}
-
-pub fn spawn_ally(
-    mut commands: Commands,
-    mut spawnally_evr: EventReader<SpawnAlly>,
-    textures: Res<TextureAssets>,
-) {
-    for ev in spawnally_evr.read() {
-        spawn_unit(
-            &mut commands,
-            Faction::Ally,
-            ev.translation,
-            &textures,
-            Behaviour::default(),
-            None,
-        );
-    }
-}
-
 #[derive(Debug, Component)]
 pub struct AttackCooldown {
-    timer: Timer,
+    pub timer: Timer,
 }
 
 fn advance_attack_cooldown_timer(
