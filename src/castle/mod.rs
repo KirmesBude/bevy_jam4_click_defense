@@ -1,16 +1,22 @@
+pub mod spawner;
+pub mod upgrade;
+
 use std::collections::VecDeque;
 
-use crate::attributes::{Health, Immortal};
-use crate::hit_detection::HurtBoxBundle;
+use crate::common::attributes::{Health, Immortal};
+use crate::common::Faction;
 use crate::loading::TextureAssets;
+use crate::physics::hit_detection::HurtBoxBundle;
 use crate::physics::PhysicsCollisionBundle;
-use crate::techtree::SpawnCooldownReduction;
-use crate::units::{Faction, UnitKind};
+use crate::units::UnitKind;
 use crate::GameState;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::input::ButtonState;
 use bevy::prelude::*;
 use bevy_xpbd_2d::components::{Collider, CollisionLayers, RigidBody};
+
+use self::spawner::SpawnerPlugin;
+use self::upgrade::{SpawnCooldownReduction, UpgradePlugin};
 
 pub struct CastlePlugin;
 
@@ -30,7 +36,8 @@ pub struct AllyCastleHealthUI;
 /// Castle logic is only active during the State `GameState::Playing`
 impl Plugin for CastlePlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<AllyCastle>()
+        app.add_plugins((SpawnerPlugin, UpgradePlugin))
+            .init_resource::<AllyCastle>()
             .init_resource::<EnemyCastle>()
             .init_resource::<UnitPoints>()
             .add_event::<SpawnUnit>()

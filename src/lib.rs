@@ -1,37 +1,27 @@
 #![allow(clippy::type_complexity)]
 
-mod attributes;
 mod audio;
-mod behaviour;
 mod castle;
+mod common;
 mod debug;
-mod game_ui;
-mod hit_detection;
 mod loading;
-mod menu;
 mod physics;
-mod spawner;
-mod techtree;
+mod ui;
 mod units;
 
 use crate::audio::InternalAudioPlugin;
 use crate::castle::CastlePlugin;
 use crate::loading::LoadingPlugin;
-use crate::menu::MenuPlugin;
 
-use attributes::AttributesPlugin;
-use behaviour::BehaviourPlugin;
 use bevy::app::App;
 #[cfg(debug_assertions)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_rand::{plugin::EntropyPlugin, prelude::ChaCha8Rng};
+use common::CommonPlugin;
 use debug::DebugPlugin;
-use game_ui::GameUiPlugin;
-use hit_detection::HitDetectionPlugin;
 use physics::InternalPhysicsPlugin;
-use spawner::SpawnerPlugin;
-use techtree::TechtreePlugin;
+use ui::InternalUiPlugin;
 use units::UnitPluging;
 
 // This example game uses States to separate logic
@@ -56,18 +46,13 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<GameState>().add_plugins((
             LoadingPlugin,
-            MenuPlugin,
+            InternalUiPlugin,
             InternalAudioPlugin,
             CastlePlugin,
             UnitPluging,
-            AttributesPlugin,
+            CommonPlugin,
             InternalPhysicsPlugin,
-            HitDetectionPlugin,
-            SpawnerPlugin,
             EntropyPlugin::<ChaCha8Rng>::default(),
-            BehaviourPlugin,
-            GameUiPlugin,
-            TechtreePlugin,
         ));
         #[cfg(debug_assertions)]
         {

@@ -1,3 +1,5 @@
+pub mod hit_detection;
+
 use bevy::prelude::*;
 use bevy_xpbd_2d::{
     components::{Collider, CollisionLayers, RigidBody},
@@ -6,12 +8,14 @@ use bevy_xpbd_2d::{
     resources::Gravity,
 };
 
+use self::hit_detection::HitDetectionPlugin;
+
 pub struct InternalPhysicsPlugin;
 
 // This plugin is responsible to control the game audio
 impl Plugin for InternalPhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(PhysicsPlugins::default())
+        app.add_plugins((PhysicsPlugins::default(), HitDetectionPlugin))
             .insert_resource(Gravity::ZERO);
         #[cfg(debug_assertions)]
         {

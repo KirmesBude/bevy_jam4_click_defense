@@ -1,17 +1,21 @@
+pub mod behaviour;
+
 use bevy::prelude::*;
 use bevy_rand::{prelude::ChaCha8Rng, resource::GlobalEntropy};
 use bevy_xpbd_2d::components::{Collider, CollidingEntities, CollisionLayers, Sensor};
 use rand_core::RngCore;
 
 use crate::{
-    attributes::Health,
-    behaviour::{Behaviour, DefaultBehaviour, EnemyFinderBundle},
     castle::{AllyCastle, EnemyCastle, SpawnUnit},
-    hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
+    common::attributes::Health,
+    common::Faction,
     loading::TextureAssets,
-    physics::{PhysicsCollisionBundle, SensorLayers},
+    physics::hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
+    physics::PhysicsCollisionBundle,
     GameState,
 };
+
+use self::behaviour::{Behaviour, BehaviourPlugin, DefaultBehaviour, EnemyFinderBundle};
 
 pub struct UnitPluging;
 
@@ -19,7 +23,7 @@ pub struct UnitPluging;
 /// Unit logic is only active during the State `GameState::Playing`
 impl Plugin for UnitPluging {
     fn build(&self, app: &mut App) {
-        app.add_systems(
+        app.add_plugins(BehaviourPlugin).add_systems(
             Update,
             (
                 advance_attack_cooldown_timer,
@@ -28,35 +32,6 @@ impl Plugin for UnitPluging {
             )
                 .run_if(in_state(GameState::Playing)),
         );
-    }
-}
-
-#[derive(Debug, Component, Clone, Copy)]
-pub enum Faction {
-    Ally,
-    Enemy,
-}
-
-impl Faction {
-    pub fn opposite(&self) -> Self {
-        match self {
-            Self::Ally => Self::Enemy,
-            Self::Enemy => Self::Ally,
-        }
-    }
-
-    pub fn hurt_layer(&self) -> SensorLayers {
-        match self {
-            Faction::Ally => SensorLayers::AllyHurt,
-            Faction::Enemy => SensorLayers::EnemyHurt,
-        }
-    }
-
-    pub fn hit_layer(&self) -> SensorLayers {
-        match self {
-            Faction::Ally => SensorLayers::AllyHit,
-            Faction::Enemy => SensorLayers::EnemyHit,
-        }
     }
 }
 

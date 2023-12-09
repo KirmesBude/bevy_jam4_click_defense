@@ -3,7 +3,7 @@ use bevy_xpbd_2d::components::{
     Collider, ColliderParent, CollidingEntities, CollisionLayers, Sensor,
 };
 
-use crate::attributes::ApplyHealthDelta;
+use crate::common::attributes::ApplyHealthDelta;
 
 pub struct HitDetectionPlugin;
 

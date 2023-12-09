@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::{fmt::Display, ops::Add};
 
-use crate::{castle::UnitPoints, units::Faction, GameState};
+use crate::{castle::UnitPoints, common::Faction, GameState};
 
 pub struct AttributesPlugin;
 

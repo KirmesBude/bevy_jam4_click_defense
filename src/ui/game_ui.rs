@@ -1,7 +1,6 @@
 use crate::{
-    castle::{AllyCastle, QueueAllyUnit, UnitPoints},
+    castle::{upgrade::SpawnCooldownReduction, AllyCastle, QueueAllyUnit, UnitPoints},
     loading::UiAssets,
-    techtree::SpawnCooldownReduction,
     units::UnitKind,
     GameState,
 };

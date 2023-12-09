@@ -5,13 +5,16 @@ use bevy::{
 use bevy_xpbd_2d::components::{Collider, CollisionLayers};
 
 use crate::{
-    attributes::{ApplyHealthDelta, Health},
-    behaviour::{Behaviour, DefaultBehaviour, EnemyFinderBundle},
     castle::AllyCastle,
-    hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
+    common::attributes::{ApplyHealthDelta, Health},
+    common::Faction,
     loading::TextureAssets,
+    physics::hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
     physics::PhysicsCollisionBundle,
-    units::{AttackCooldown, Faction, UnitKind},
+    units::{
+        behaviour::{Behaviour, DefaultBehaviour, EnemyFinderBundle},
+        AttackCooldown, UnitKind,
+    },
     GameState,
 };
 use std::fmt::Debug;

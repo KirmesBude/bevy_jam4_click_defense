@@ -4,11 +4,11 @@ use bevy::prelude::*;
 
 use crate::{castle::SpawnQueue, GameState};
 
-pub struct TechtreePlugin;
+pub struct UpgradePlugin;
 
 /// This plugin handles attributes related stuff like health
 /// Attribure logic is only active during the State `GameState::Playing`
-impl Plugin for TechtreePlugin {
+impl Plugin for UpgradePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
