@@ -1,4 +1,4 @@
-use crate::loading::TextureAssets;
+use crate::loading::UiAssets;
 use crate::GameState;
 use bevy::prelude::*;
 
@@ -32,7 +32,7 @@ impl Default for ButtonColors {
 #[derive(Component)]
 struct Menu;
 
-fn setup_menu(mut commands: Commands, textures: Res<TextureAssets>) {
+fn setup_menu(mut commands: Commands, ui_assets: Res<UiAssets>) {
     info!("menu");
     commands.spawn(Camera2dBundle::default());
     commands
@@ -126,7 +126,7 @@ fn setup_menu(mut commands: Commands, textures: Res<TextureAssets>) {
                         },
                     ));
                     parent.spawn(ImageBundle {
-                        image: textures.bevy.clone().into(),
+                        image: ui_assets.bevy.clone().into(),
                         style: Style {
                             width: Val::Px(32.),
                             ..default()
@@ -164,7 +164,7 @@ fn setup_menu(mut commands: Commands, textures: Res<TextureAssets>) {
                         },
                     ));
                     parent.spawn(ImageBundle {
-                        image: textures.github.clone().into(),
+                        image: ui_assets.github.clone().into(),
                         style: Style {
                             width: Val::Px(32.),
                             ..default()
@@ -173,6 +173,12 @@ fn setup_menu(mut commands: Commands, textures: Res<TextureAssets>) {
                     });
                 });
         });
+
+    commands.spawn(SpriteBundle {
+        texture: ui_assets.background.clone(),
+        transform: Transform::from_xyz(0.0, 0.0, -100.0),
+        ..Default::default()
+    });
 }
 
 #[derive(Component)]

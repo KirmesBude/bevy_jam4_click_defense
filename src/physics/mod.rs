@@ -1,14 +1,14 @@
 pub mod hit_detection;
 
 use bevy::prelude::*;
+#[cfg(debug_assertions)]
+use bevy_xpbd_2d::plugins::PhysicsDebugPlugin;
 use bevy_xpbd_2d::{
     components::{Collider, CollisionLayers, RigidBody},
     plugins::PhysicsPlugins,
     prelude::PhysicsLayer,
     resources::Gravity,
 };
-#[cfg(debug_assertions)]
-use bevy_xpbd_2d::plugins::PhysicsDebugPlugin;
 
 use self::hit_detection::HitDetectionPlugin;
 
