@@ -29,9 +29,6 @@ pub struct AllyCastle(pub Option<Entity>);
 #[derive(Debug, Default, Resource, Deref)]
 pub struct EnemyCastle(pub Option<Entity>);
 
-#[derive(Component)]
-pub struct AllyCastleHealthUI;
-
 /// This plugin handles castle related stuff like health ui
 /// Castle logic is only active during the State `GameState::Playing`
 impl Plugin for CastlePlugin {
@@ -39,22 +36,16 @@ impl Plugin for CastlePlugin {
         app.add_plugins((SpawnerPlugin, UpgradePlugin))
             .init_resource::<AllyCastle>()
             .init_resource::<EnemyCastle>()
-            .init_resource::<UnitPoints>()
+            .init_resource::<Gold>()
             .add_event::<SpawnUnit>()
             .add_event::<QueueAllyUnit>()
             .add_systems(
                 OnEnter(GameState::Playing),
-                (
-                    spawn_ally_castle,
-                    spawn_enemy_castle,
-                    spawn_health_ui,
-                    init_unit_points,
-                ),
+                (spawn_ally_castle, spawn_enemy_castle, init_gold),
             )
             .add_systems(
                 Update,
                 (
-                    update_health,
                     spawn_queue,
                     process_queue_ally_unit,
                     game_over,
@@ -147,42 +138,6 @@ fn spawn_enemy_castle(
     enemy_castle.0 = Some(entity);
 }
 
-fn spawn_health_ui(mut commands: Commands) {
-    commands.spawn((
-        TextBundle::from_section(
-            "CastleHealth",
-            TextStyle {
-                font_size: 40.0,
-                color: Color::rgb(0.9, 0.9, 0.9),
-                ..default()
-            },
-        )
-        .with_text_alignment(TextAlignment::Center)
-        .with_style(Style {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            flex_direction: FlexDirection::Column,
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            ..default()
-        }),
-        AllyCastleHealthUI,
-    ));
-}
-
-fn update_health(
-    ally_castle: Res<AllyCastle>,
-    castle_healths: Query<&Health, With<Castle>>,
-    mut castle_health_ui: Query<&mut Text, With<AllyCastleHealthUI>>,
-) {
-    if let Some(entity) = ally_castle.0 {
-        let castle_health = castle_healths.get(entity).unwrap();
-        let mut castle_health_ui = castle_health_ui.single_mut();
-
-        castle_health_ui.sections[0].value = format!("{}", castle_health);
-    }
-}
-
 #[derive(Debug, Component)]
 pub struct SpawnQueue {
     pub timer: Timer,
@@ -225,14 +180,14 @@ fn process_queue_ally_unit(
     mut queueallyunit_evr: EventReader<QueueAllyUnit>,
     mut spawn_queue: Query<&mut SpawnQueue>,
     ally_castle: Res<AllyCastle>,
-    mut unit_points: ResMut<UnitPoints>,
+    mut gold: ResMut<Gold>,
 ) {
     for ev in queueallyunit_evr.read() {
-        if unit_points.0 > 0 {
+        if gold.0 > 0 {
             if let Some(entity) = ally_castle.0 {
                 if let Ok(mut spawn_queue) = spawn_queue.get_mut(entity) {
                     spawn_queue.units.push_back(ev.kind);
-                    unit_points.0 -= 1;
+                    gold.0 -= 1;
                 }
             }
         }
@@ -254,10 +209,10 @@ fn game_over(
 }
 
 #[derive(Debug, Default, Resource)]
-pub struct UnitPoints(pub usize);
+pub struct Gold(pub usize);
 
-fn init_unit_points(mut unit_points: ResMut<UnitPoints>) {
-    unit_points.0 = 5;
+fn init_gold(mut gold: ResMut<Gold>) {
+    gold.0 = 5;
 }
 
 #[derive(Debug, Event)]

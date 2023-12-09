@@ -16,9 +16,9 @@ impl Plugin for SpawnerPlugin {
 }
 
 #[derive(Debug, Resource)]
-struct Wave {
-    level: u32,
-    timer: Timer,
+pub struct Wave {
+    pub level: u32,
+    pub timer: Timer,
 }
 
 impl Default for Wave {
