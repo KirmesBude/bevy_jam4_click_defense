@@ -36,6 +36,8 @@ enum GameState {
     Playing,
     // Here the menu is drawn and waiting for player interaction
     Menu,
+    // Instructions
+    Instructions,
     // GameOver
     GameOver,
 }
