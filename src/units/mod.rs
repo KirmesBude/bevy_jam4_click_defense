@@ -1,9 +1,7 @@
 pub mod behaviour;
 
 use bevy::prelude::*;
-use bevy_rand::{prelude::ChaCha8Rng, resource::GlobalEntropy};
 use bevy_xpbd_2d::components::{Collider, CollidingEntities, CollisionLayers, Sensor};
-use rand_core::RngCore;
 
 use crate::{
     castle::{AllyCastle, EnemyCastle, SpawnUnit},
@@ -56,11 +54,12 @@ fn spawn_unit_from_event(
     transforms: Query<&GlobalTransform>,
     mut commands: Commands,
     textures: Res<TextureAssets>,
-    mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
+    mut y: Local<f32>,
 ) {
     for ev in spawnunit_evr.read() {
         if let Ok(transform) = transforms.get(ev.origin) {
             let translation = transform.translation();
+            *y = (*y + 60.0) % 360.0;
 
             commands
                 .spawn(SpriteBundle {
@@ -72,10 +71,7 @@ fn spawn_unit_from_event(
                     transform: Transform::from_translation(translation),
                     ..Default::default()
                 })
-                .insert(Behaviour::MoveToPoint(Vec2::new(
-                    0.0,
-                    (rng.next_u32() % 720) as f32 - 360.0,
-                )))
+                .insert(Behaviour::MoveToPoint(Vec2::new(0.0, *y - 180.0)))
                 .insert(Health::new(100.0))
                 .insert(PhysicsCollisionBundle {
                     collider: Collider::ball(10.0),

@@ -1,11 +1,9 @@
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
-use bevy_rand::{prelude::ChaCha8Rng, resource::GlobalEntropy};
 use bevy_xpbd_2d::components::{
     Collider, ColliderParent, CollidingEntities, CollisionLayers, LinearVelocity, Sensor,
 };
-use rand_core::RngCore;
 
 use crate::GameState;
 
@@ -55,7 +53,7 @@ fn behaviour(
     )>,
     transforms: Query<&GlobalTransform>,
     time: Res<Time>,
-    mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
+    mut direction: Local<Vec2>,
 ) {
     for (source_entity, mut velocity, mut behaviour, default_behaviour, colliding_entities) in
         query.iter_mut()
@@ -63,7 +61,7 @@ fn behaviour(
         let inner_behaviour = behaviour.as_mut();
         match inner_behaviour {
             Behaviour::Wandering(ref mut timer, ref mut saved_velocity) => {
-                wandering(&time, timer, &mut velocity, saved_velocity, &mut rng)
+                wandering(&time, timer, &mut velocity, saved_velocity, &mut direction)
             }
             Behaviour::MoveToPoint(dst_point) => {
                 let src_point = transforms
@@ -102,13 +100,12 @@ fn wandering(
     timer: &mut Timer,
     velocity: &mut LinearVelocity,
     saved_velocity: &mut LinearVelocity,
-    rng: &mut GlobalEntropy<ChaCha8Rng>,
+    direction: &mut Vec2,
 ) {
     if timer.tick(time.delta()).just_finished() {
-        let vector = Vec2::new(
-            ((rng.next_u32() % 200) as f32 - 100.0) / 100.0,
-            ((rng.next_u32() % 200) as f32 - 100.0) / 100.0,
-        );
+        *direction = Vec2::new((direction.x + 0.5) % 2.0, (direction.y + 0.5) % 2.0);
+        let vector = *direction - Vec2::new(1.0, 1.0);
+        velocity.0 = vector * 20.0;
         saved_velocity.0 = vector * 20.0;
     }
 
@@ -198,14 +195,12 @@ pub struct DefaultBehaviour(pub Behaviour);
 
 fn behavior_added(
     mut behaviours: Query<&mut Behaviour, Added<Behaviour>>,
-    mut rng: ResMut<GlobalEntropy<ChaCha8Rng>>,
+    mut direction: Local<Vec2>,
 ) {
     for mut behaviour in &mut behaviours {
         if let Behaviour::Wandering(_, ref mut velocity) = behaviour.as_mut() {
-            let vector = Vec2::new(
-                ((rng.next_u32() % 200) as f32 - 100.0) / 100.0,
-                ((rng.next_u32() % 200) as f32 - 100.0) / 100.0,
-            );
+            *direction = Vec2::new((direction.x + 0.5) % 2.0, (direction.y + 0.5) % 2.0);
+            let vector = *direction - Vec2::new(1.0, 1.0);
             velocity.0 = vector * 20.0;
         }
     }

@@ -17,8 +17,8 @@ use bevy::app::App;
 #[cfg(debug_assertions)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
-use bevy_rand::{plugin::EntropyPlugin, prelude::ChaCha8Rng};
 use common::CommonPlugin;
+#[cfg(debug_assertions)]
 use debug::DebugPlugin;
 use physics::InternalPhysicsPlugin;
 use ui::InternalUiPlugin;
@@ -52,7 +52,6 @@ impl Plugin for GamePlugin {
             UnitPluging,
             CommonPlugin,
             InternalPhysicsPlugin,
-            EntropyPlugin::<ChaCha8Rng>::default(),
         ));
         #[cfg(debug_assertions)]
         {
