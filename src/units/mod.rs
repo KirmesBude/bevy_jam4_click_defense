@@ -163,6 +163,14 @@ pub enum UnitKind {
 }
 
 impl UnitKind {
+    pub fn cost(&self) -> usize {
+        match self {
+            UnitKind::Soldier => 1,
+        }
+    }
+}
+
+impl UnitKind {
     pub fn texture(&self, faction: &Faction, texture_assets: &TextureAssets) -> Handle<Image> {
         match self {
             UnitKind::Soldier => match faction {

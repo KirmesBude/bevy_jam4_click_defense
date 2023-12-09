@@ -1,6 +1,7 @@
 use crate::{
     castle::{
         spawner::Wave, upgrade::SpawnCooldownReduction, AllyCastle, Castle, Gold, QueueAllyUnit,
+        SpawnQueue,
     },
     common::attributes::Health,
     loading::UiAssets,
@@ -41,7 +42,7 @@ struct SpawnButton(pub UnitKind);
 #[derive(Debug, Default, Component)]
 struct SpawnButtonText;
 
-fn setup_game_ui(mut commands: Commands, gold: Res<Gold>, ui_assets: Res<UiAssets>) {
+fn setup_game_ui(mut commands: Commands, ui_assets: Res<UiAssets>) {
     info!("game_ui");
     commands
         .spawn((NodeBundle {
@@ -76,7 +77,7 @@ fn setup_game_ui(mut commands: Commands, gold: Res<Gold>, ui_assets: Res<UiAsset
                 .with_children(|parent| {
                     parent
                         .spawn(TextBundle::from_section(
-                            format!("{}", gold.0),
+                            format!("{}", 0),
                             TextStyle {
                                 font_size: 30.0,
                                 color: Color::rgb(0.9, 0.9, 0.9),
@@ -85,7 +86,7 @@ fn setup_game_ui(mut commands: Commands, gold: Res<Gold>, ui_assets: Res<UiAsset
                         ))
                         .insert(SpawnButtonText);
                     parent.spawn(TextBundle::from_section(
-                        format!("{}", 1),
+                        format!("{}", UnitKind::Soldier.cost()),
                         TextStyle {
                             font_size: 30.0,
                             color: Color::rgb(0.9, 0.9, 0.0),
@@ -153,9 +154,22 @@ fn click_spawn_button(
     }
 }
 
-fn update_spawn_button_text(mut query: Query<&mut Text, With<SpawnButtonText>>, gold: Res<Gold>) {
-    for mut text in &mut query {
-        text.sections[0].value = format!("{}", gold.0);
+fn update_spawn_button_text(
+    mut query: Query<&mut Text, With<SpawnButtonText>>,
+    ally_castle: Res<AllyCastle>,
+    spawn_queues: Query<&SpawnQueue, With<Castle>>,
+) {
+    if let Some(entity) = ally_castle.0 {
+        if let Ok(spawn_queue) = spawn_queues.get(entity) {
+            for mut text in &mut query {
+                let value = spawn_queue
+                    .units
+                    .iter()
+                    .filter(|x| matches!(x, UnitKind::Soldier))
+                    .count();
+                text.sections[0].value = format!("{}", value);
+            }
+        }
     }
 }
 
@@ -166,6 +180,7 @@ fn click_spawn_cooldown_reduction_button(
     >,
     mut spawn_cooldown_reduction: Query<&mut SpawnCooldownReduction>,
     ally_castle: Res<AllyCastle>,
+    mut gold: ResMut<Gold>,
 ) {
     for (interaction, _spawn_button) in &mut interaction_query {
         match *interaction {
@@ -174,7 +189,10 @@ fn click_spawn_cooldown_reduction_button(
                     if let Ok(mut spawn_cooldown_reduction) =
                         spawn_cooldown_reduction.get_mut(entity)
                     {
-                        spawn_cooldown_reduction.level += 1;
+                        if gold.0 >= spawn_cooldown_reduction.cost() {
+                            gold.0 -= spawn_cooldown_reduction.cost();
+                            spawn_cooldown_reduction.level += 1;
+                        }
                     }
                 }
             }

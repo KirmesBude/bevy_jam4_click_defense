@@ -28,6 +28,10 @@ impl SpawnCooldownReduction {
     pub fn get(&self) -> f32 {
         (self.level as f32) * Self::BASE_VALUE
     }
+
+    pub fn cost(&self) -> usize {
+        (self.level + 1) * 5
+    }
 }
 
 #[derive(Debug, Default, Component)]

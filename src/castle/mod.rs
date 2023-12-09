@@ -187,7 +187,7 @@ fn process_queue_ally_unit(
             if let Some(entity) = ally_castle.0 {
                 if let Ok(mut spawn_queue) = spawn_queue.get_mut(entity) {
                     spawn_queue.units.push_back(ev.kind);
-                    gold.0 -= 1;
+                    gold.0 -= ev.kind.cost();
                 }
             }
         }
@@ -212,7 +212,7 @@ fn game_over(
 pub struct Gold(pub usize);
 
 fn init_gold(mut gold: ResMut<Gold>) {
-    gold.0 = 5;
+    gold.0 = 25;
 }
 
 #[derive(Debug, Event)]
