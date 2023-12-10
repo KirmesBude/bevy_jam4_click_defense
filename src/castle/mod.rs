@@ -8,6 +8,7 @@ use crate::common::Faction;
 use crate::loading::TextureAssets;
 use crate::physics::hit_detection::HurtBoxBundle;
 use crate::physics::PhysicsCollisionBundle;
+use crate::units::upgrade::{AttackCooldownUpgrade, ShieldUpgrade};
 use crate::units::UnitKind;
 use crate::GameState;
 use bevy::input::keyboard::KeyboardInput;
@@ -82,6 +83,8 @@ fn spawn_ally_castle(
         })
         .insert(SpawnQueue::default())
         .insert(SpawnCooldownReduction::default())
+        .insert(ShieldUpgrade::default())
+        .insert(AttackCooldownUpgrade::default())
         .with_children(|children| {
             children.spawn(HurtBoxBundle {
                 collider: Collider::ball(127.0),
@@ -123,6 +126,8 @@ fn spawn_enemy_castle(
         })
         .insert(SpawnQueue::default())
         .insert(SpawnCooldownReduction::default())
+        .insert(ShieldUpgrade::default())
+        .insert(AttackCooldownUpgrade::default())
         .with_children(|children| {
             children.spawn(HurtBoxBundle {
                 collider: Collider::ball(127.0),
@@ -212,7 +217,7 @@ fn game_over(
 pub struct Gold(pub usize);
 
 fn init_gold(mut gold: ResMut<Gold>) {
-    gold.0 = 25;
+    gold.0 = 500;
 }
 
 #[derive(Debug, Event)]

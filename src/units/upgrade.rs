@@ -1,5 +1,13 @@
 use bevy::prelude::*;
 
+pub struct UpgradePlugin;
+
+/// This plugin handles attributes related stuff like health
+/// Attribure logic is only active during the State `GameState::Playing`
+impl Plugin for UpgradePlugin {
+    fn build(&self, _app: &mut App) {}
+}
+
 #[derive(Debug, Default, Component)]
 pub struct ShieldUpgrade {
     level: usize,
@@ -7,7 +15,7 @@ pub struct ShieldUpgrade {
 
 impl ShieldUpgrade {
     const MAX_LEVEL: usize = 10;
-    
+
     pub fn level(&self) -> usize {
         self.level
     }
@@ -38,7 +46,7 @@ pub struct AttackCooldownUpgrade {
 impl AttackCooldownUpgrade {
     const BASE_VALUE: f32 = 0.05;
     const MAX_LEVEL: usize = 10;
-    
+
     pub fn level(&self) -> usize {
         self.level
     }
@@ -60,4 +68,3 @@ impl AttackCooldownUpgrade {
         (self.level as f32) * Self::BASE_VALUE
     }
 }
-

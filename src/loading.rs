@@ -48,6 +48,10 @@ pub struct UiAssets {
     pub soldier_button: Handle<Image>,
     #[asset(path = "textures/tech_castle_button.png")]
     pub tech_castle_button: Handle<Image>,
+    #[asset(path = "textures/soldier_attackspeed.png")]
+    pub soldier_attackspeed: Handle<Image>,
+    #[asset(path = "textures/soldier_shield.png")]
+    pub soldier_shield: Handle<Image>,
     #[asset(path = "textures/background.png")]
     pub background: Handle<Image>,
 }

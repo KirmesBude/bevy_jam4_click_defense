@@ -5,7 +5,10 @@ use crate::{
     },
     common::attributes::Health,
     loading::UiAssets,
-    units::UnitKind,
+    units::{
+        upgrade::{AttackCooldownUpgrade, ShieldUpgrade},
+        UnitKind,
+    },
     GameState,
 };
 use bevy::prelude::*;
@@ -30,6 +33,10 @@ impl Plugin for GameUiPlugin {
                 update_gold_ui,
                 update_wave_ui,
                 update_castle_health_ui,
+                update_soldier_shield_button,
+                update_soldier_attackspeed_button,
+                click_soldier_shield_button,
+                click_soldier_attackspeed_button,
             )
                 .run_if(in_state(GameState::Playing)),
         );
@@ -124,7 +131,7 @@ fn setup_game_ui(mut commands: Commands, ui_assets: Res<UiAssets>) {
                         .insert(SpawnCooldownReductionButtonLevelText);
                     parent
                         .spawn(TextBundle::from_section(
-                            format!("{}", 5),
+                            format!("{}", 0),
                             TextStyle {
                                 font_size: 30.0,
                                 color: Color::rgb(0.9, 0.9, 0.0),
@@ -132,6 +139,88 @@ fn setup_game_ui(mut commands: Commands, ui_assets: Res<UiAssets>) {
                             },
                         ))
                         .insert(SpawnCooldownReductionButtonCostText);
+                });
+
+            children
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            width: Val::Px(128.0),
+                            height: Val::Px(128.0),
+                            flex_direction: FlexDirection::Row,
+                            justify_content: JustifyContent::SpaceBetween,
+                            align_items: AlignItems::FlexStart,
+                            ..Default::default()
+                        },
+                        image: ui_assets.soldier_shield.clone().into(),
+                        ..Default::default()
+                    },
+                    SoldierShieldButton,
+                ))
+                .with_children(|parent| {
+                    parent.spawn((
+                        TextBundle::from_section(
+                            format!("{}", 0),
+                            TextStyle {
+                                font_size: 30.0,
+                                color: Color::rgb(0.9, 0.9, 0.9),
+                                ..default()
+                            },
+                        ),
+                        SoldierShieldButtonLevelText,
+                    ));
+                    parent.spawn((
+                        TextBundle::from_section(
+                            format!("{}", 0),
+                            TextStyle {
+                                font_size: 30.0,
+                                color: Color::rgb(0.9, 0.9, 0.0),
+                                ..default()
+                            },
+                        ),
+                        SoldierShieldButtonCostText,
+                    ));
+                });
+
+            children
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            width: Val::Px(128.0),
+                            height: Val::Px(128.0),
+                            flex_direction: FlexDirection::Row,
+                            justify_content: JustifyContent::SpaceBetween,
+                            align_items: AlignItems::FlexStart,
+                            ..Default::default()
+                        },
+                        image: ui_assets.soldier_attackspeed.clone().into(),
+                        ..Default::default()
+                    },
+                    SoldierAttackspeedButton,
+                ))
+                .with_children(|parent| {
+                    parent.spawn((
+                        TextBundle::from_section(
+                            format!("{}", 0),
+                            TextStyle {
+                                font_size: 30.0,
+                                color: Color::rgb(0.9, 0.9, 0.9),
+                                ..default()
+                            },
+                        ),
+                        SoldierAttackspeedButtonLevelText,
+                    ));
+                    parent.spawn((
+                        TextBundle::from_section(
+                            format!("{}", 0),
+                            TextStyle {
+                                font_size: 30.0,
+                                color: Color::rgb(0.9, 0.9, 0.0),
+                                ..default()
+                            },
+                        ),
+                        SoldierAttackspeedButtonCostText,
+                    ));
                 });
         });
 }
@@ -325,6 +414,140 @@ fn update_castle_health_ui(
         if let Ok(health) = castle_healths.get(entity) {
             for mut text in &mut castle_health_uis {
                 text.sections[0].value = format!("{}", health);
+            }
+        }
+    }
+}
+
+#[derive(Debug, Component)]
+struct SoldierShieldButton;
+
+#[derive(Debug, Default, Component)]
+struct SoldierShieldButtonLevelText;
+
+#[derive(Debug, Default, Component)]
+struct SoldierShieldButtonCostText;
+
+fn click_soldier_shield_button(
+    mut interaction_query: Query<
+        (&Interaction, &SoldierShieldButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut soldier_shields: Query<&mut ShieldUpgrade, With<Castle>>,
+    ally_castle: Res<AllyCastle>,
+    mut gold: ResMut<Gold>,
+) {
+    for (interaction, _spawn_button) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                if let Some(entity) = ally_castle.0 {
+                    if let Ok(mut soldier_shield) = soldier_shields.get_mut(entity) {
+                        let cost = soldier_shield.cost();
+                        if gold.0 >= cost && soldier_shield.level_up() {
+                            gold.0 -= cost;
+                        }
+                    }
+                }
+            }
+            Interaction::Hovered => { /* TODO; Color shaded */ }
+            Interaction::None => { /* TODO; Color normal */ }
+        }
+    }
+}
+
+fn update_soldier_shield_button(
+    mut leveltext: Query<
+        &mut Text,
+        (
+            With<SoldierShieldButtonLevelText>,
+            Without<SoldierShieldButtonCostText>,
+        ),
+    >,
+    mut costtext: Query<
+        &mut Text,
+        (
+            With<SoldierShieldButtonCostText>,
+            Without<SoldierShieldButtonLevelText>,
+        ),
+    >,
+    soldier_shields: Query<&ShieldUpgrade, With<Castle>>,
+    ally_castle: Res<AllyCastle>,
+) {
+    if let Some(entity) = ally_castle.0 {
+        if let Ok(soldier_shield) = soldier_shields.get(entity) {
+            for mut text in &mut leveltext {
+                text.sections[0].value = format!("{}", soldier_shield.level());
+            }
+
+            for mut text in &mut costtext {
+                text.sections[0].value = format!("{}", soldier_shield.cost());
+            }
+        }
+    }
+}
+
+#[derive(Debug, Component)]
+struct SoldierAttackspeedButton;
+
+#[derive(Debug, Default, Component)]
+struct SoldierAttackspeedButtonLevelText;
+
+#[derive(Debug, Default, Component)]
+struct SoldierAttackspeedButtonCostText;
+
+fn click_soldier_attackspeed_button(
+    mut interaction_query: Query<
+        (&Interaction, &SoldierAttackspeedButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut soldier_attackspeeds: Query<&mut AttackCooldownUpgrade, With<Castle>>,
+    ally_castle: Res<AllyCastle>,
+    mut gold: ResMut<Gold>,
+) {
+    for (interaction, _spawn_button) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                if let Some(entity) = ally_castle.0 {
+                    if let Ok(mut soldier_attackspeed) = soldier_attackspeeds.get_mut(entity) {
+                        let cost = soldier_attackspeed.cost();
+                        if gold.0 >= cost && soldier_attackspeed.level_up() {
+                            gold.0 -= cost;
+                        }
+                    }
+                }
+            }
+            Interaction::Hovered => { /* TODO; Color shaded */ }
+            Interaction::None => { /* TODO; Color normal */ }
+        }
+    }
+}
+
+fn update_soldier_attackspeed_button(
+    mut leveltext: Query<
+        &mut Text,
+        (
+            With<SoldierAttackspeedButtonLevelText>,
+            Without<SoldierAttackspeedButtonCostText>,
+        ),
+    >,
+    mut costtext: Query<
+        &mut Text,
+        (
+            With<SoldierAttackspeedButtonCostText>,
+            Without<SoldierAttackspeedButtonLevelText>,
+        ),
+    >,
+    soldier_attackspeeds: Query<&AttackCooldownUpgrade, With<Castle>>,
+    ally_castle: Res<AllyCastle>,
+) {
+    if let Some(entity) = ally_castle.0 {
+        if let Ok(soldier_attackspeed) = soldier_attackspeeds.get(entity) {
+            for mut text in &mut leveltext {
+                text.sections[0].value = format!("{}", soldier_attackspeed.level());
+            }
+
+            for mut text in &mut costtext {
+                text.sections[0].value = format!("{}", soldier_attackspeed.cost());
             }
         }
     }

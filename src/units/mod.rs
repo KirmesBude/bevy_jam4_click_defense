@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use bevy_xpbd_2d::components::{Collider, CollidingEntities, CollisionLayers, Sensor};
 
 use crate::{
-    castle::{AllyCastle, EnemyCastle, SpawnUnit},
+    castle::{AllyCastle, Castle, EnemyCastle, SpawnUnit},
     common::attributes::Health,
     common::Faction,
     loading::TextureAssets,
@@ -14,7 +14,10 @@ use crate::{
     GameState,
 };
 
-use self::behaviour::{Behaviour, BehaviourPlugin, DefaultBehaviour, EnemyFinderBundle};
+use self::{
+    behaviour::{Behaviour, BehaviourPlugin, DefaultBehaviour, EnemyFinderBundle},
+    upgrade::{AttackCooldownUpgrade, ShieldUpgrade, UpgradePlugin},
+};
 
 pub struct UnitPluging;
 
@@ -22,15 +25,16 @@ pub struct UnitPluging;
 /// Unit logic is only active during the State `GameState::Playing`
 impl Plugin for UnitPluging {
     fn build(&self, app: &mut App) {
-        app.add_plugins(BehaviourPlugin).add_systems(
-            Update,
-            (
-                advance_attack_cooldown_timer,
-                spawn_unit_from_event,
-                spawn_protection,
-            )
-                .run_if(in_state(GameState::Playing)),
-        );
+        app.add_plugins((BehaviourPlugin, UpgradePlugin))
+            .add_systems(
+                Update,
+                (
+                    advance_attack_cooldown_timer,
+                    spawn_unit_from_event,
+                    spawn_protection,
+                )
+                    .run_if(in_state(GameState::Playing)),
+            );
     }
 }
 
@@ -56,11 +60,18 @@ fn spawn_unit_from_event(
     mut commands: Commands,
     textures: Res<TextureAssets>,
     mut y: Local<f32>,
+    soldier_shields: Query<&ShieldUpgrade, With<Castle>>,
 ) {
     for ev in spawnunit_evr.read() {
         if let Ok(transform) = transforms.get(ev.origin) {
             let translation = transform.translation();
             *y = (*y + 60.0) % 360.0;
+
+            let health = if let Ok(soldier_shield) = soldier_shields.get(ev.origin) {
+                100.0 + soldier_shield.get()
+            } else {
+                100.0
+            };
 
             commands
                 .spawn(SpriteBundle {
@@ -73,7 +84,7 @@ fn spawn_unit_from_event(
                     ..Default::default()
                 })
                 .insert(Behaviour::MoveToPoint(Vec2::new(0.0, *y - 180.0)))
-                .insert(Health::new(100.0))
+                .insert(Health::new(health))
                 .insert(PhysicsCollisionBundle {
                     collider: Collider::ball(10.0),
                     ..Default::default()
@@ -107,12 +118,31 @@ fn spawn_protection(
     time: Res<Time>,
     ally_castle: Res<AllyCastle>,
     enemy_castle: Res<EnemyCastle>,
+    soldier_attack_speeds: Query<&AttackCooldownUpgrade, With<Castle>>,
 ) {
     for (entity, colliding_entities, faction, mut spawn_protection, mut behaviour) in &mut query {
         if spawn_protection.0.tick(time.delta()).finished() && colliding_entities.is_empty() {
             *behaviour = match faction {
                 Faction::Ally => Behaviour::MoveAndAttack(enemy_castle.0.unwrap()),
                 Faction::Enemy => Behaviour::MoveAndAttack(ally_castle.0.unwrap()),
+            };
+
+            let mut attack_speed = 1.0;
+            match faction {
+                Faction::Ally => {
+                    if let Some(entity) = ally_castle.0 {
+                        if let Ok(soldier_attack_speed) = soldier_attack_speeds.get(entity) {
+                            attack_speed *= 1.0 - soldier_attack_speed.get();
+                        }
+                    }
+                }
+                Faction::Enemy => {
+                    if let Some(entity) = enemy_castle.0 {
+                        if let Ok(soldier_attack_speed) = soldier_attack_speeds.get(entity) {
+                            attack_speed *= 1.0 - soldier_attack_speed.get();
+                        }
+                    }
+                }
             };
 
             /* TODO: A bit janky if units with spawn protection overlap */
@@ -143,7 +173,7 @@ fn spawn_protection(
                                 ..Default::default()
                             })
                             .insert(AttackCooldown {
-                                timer: Timer::from_seconds(1.0, TimerMode::Repeating),
+                                timer: Timer::from_seconds(attack_speed, TimerMode::Repeating),
                             });
                         children.spawn(EnemyFinderBundle {
                             collider: Collider::ball(60.0),
