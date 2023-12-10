@@ -46,6 +46,10 @@ impl SpawnCooldownReduction {
     pub fn level(&self) -> usize {
         self.level
     }
+
+    pub fn new(level: usize) -> Self {
+        Self { level }
+    }
 }
 
 #[derive(Debug, Default, Component)]

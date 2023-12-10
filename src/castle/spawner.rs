@@ -2,9 +2,14 @@ use bevy::prelude::*;
 
 use crate::{
     castle::{EnemyCastle, SpawnQueue},
-    units::UnitKind,
+    units::{
+        upgrade::{AttackCooldownUpgrade, ShieldUpgrade},
+        UnitKind,
+    },
     GameState,
 };
+
+use super::upgrade::SpawnCooldownReduction;
 pub struct SpawnerPlugin;
 
 // This plugin is responsible to control the game audio
@@ -37,16 +42,32 @@ fn tick_wave_timer(
     time: Res<Time>,
     mut wave: ResMut<Wave>,
     enemy_castle: Res<EnemyCastle>,
-    mut spawn_queue: Query<&mut SpawnQueue>,
+    mut spawn_queue: Query<(
+        &mut SpawnQueue,
+        &mut SpawnCooldownReduction,
+        &mut ShieldUpgrade,
+        &mut AttackCooldownUpgrade,
+    )>,
 ) {
     if let Some(entity) = enemy_castle.0 {
-        if let Ok(mut spawn_queue) = spawn_queue.get_mut(entity) {
-            if wave.timer.tick(time.delta()).just_finished() {
-                (0..2 * wave.level).for_each(|_| {
+        if let Ok((mut spawn_queue, mut spawn_cooldown, mut shield, mut attack_speed)) =
+            spawn_queue.get_mut(entity)
+        {
+            if spawn_queue.units.is_empty() && wave.timer.tick(time.delta()).just_finished() {
+                (0..30 * wave.level).for_each(|_| {
                     spawn_queue.units.push_back(UnitKind::Soldier);
                 });
 
                 wave.level += 1;
+
+                if wave.level % 3 == 0 {
+                    spawn_cooldown.level_up();
+                    spawn_cooldown.level_up();
+                    shield.level_up();
+                    shield.level_up();
+                    attack_speed.level_up();
+                    attack_speed.level_up();
+                }
             }
         }
     }

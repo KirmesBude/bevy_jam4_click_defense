@@ -126,9 +126,9 @@ fn spawn_enemy_castle(
             ..Default::default()
         })
         .insert(SpawnQueue::default())
-        .insert(SpawnCooldownReduction::default())
-        .insert(ShieldUpgrade::default())
-        .insert(AttackCooldownUpgrade::default())
+        .insert(SpawnCooldownReduction::new(2))
+        .insert(ShieldUpgrade::new(2))
+        .insert(AttackCooldownUpgrade::new(2))
         .with_children(|children| {
             children.spawn(HurtBoxBundle {
                 collider: Collider::ball(127.0),

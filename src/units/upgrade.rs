@@ -36,6 +36,10 @@ impl ShieldUpgrade {
     pub fn get(&self) -> f32 {
         (self.level as f32) * 12.5
     }
+
+    pub fn new(level: usize) -> Self {
+        Self { level }
+    }
 }
 
 #[derive(Debug, Default, Component)]
@@ -66,5 +70,9 @@ impl AttackCooldownUpgrade {
 
     pub fn get(&self) -> f32 {
         (self.level as f32) * Self::BASE_VALUE
+    }
+
+    pub fn new(level: usize) -> Self {
+        Self { level }
     }
 }
