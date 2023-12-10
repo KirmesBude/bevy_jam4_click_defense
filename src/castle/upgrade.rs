@@ -23,7 +23,7 @@ pub struct SpawnCooldownReduction {
 }
 
 impl SpawnCooldownReduction {
-    const BASE_VALUE: f32 = 0.05;
+    const BASE_VALUE: f32 = 0.075;
     const MAX_LEVEL: usize = 10;
 
     pub fn level_up(&mut self) -> bool {

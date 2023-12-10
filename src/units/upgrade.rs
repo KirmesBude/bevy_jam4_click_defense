@@ -34,7 +34,7 @@ impl ShieldUpgrade {
     }
 
     pub fn get(&self) -> f32 {
-        (self.level as f32) * 10.0
+        (self.level as f32) * 12.5
     }
 }
 
@@ -44,7 +44,7 @@ pub struct AttackCooldownUpgrade {
 }
 
 impl AttackCooldownUpgrade {
-    const BASE_VALUE: f32 = 0.05;
+    const BASE_VALUE: f32 = 0.075;
     const MAX_LEVEL: usize = 10;
 
     pub fn level(&self) -> usize {
