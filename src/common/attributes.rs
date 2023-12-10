@@ -66,7 +66,7 @@ fn die(
             commands.entity(entity).despawn_recursive();
 
             if let Faction::Enemy = faction {
-                gold.0 += 2;
+                gold.0 += 3;
             }
         }
     }

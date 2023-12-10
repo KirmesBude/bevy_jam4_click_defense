@@ -232,7 +232,7 @@ fn won(
 pub struct Gold(pub usize);
 
 fn init_gold(mut gold: ResMut<Gold>) {
-    gold.0 = 500;
+    gold.0 = 100;
 }
 
 #[derive(Debug, Event)]
