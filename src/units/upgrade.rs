@@ -1,0 +1,63 @@
+use bevy::prelude::*;
+
+#[derive(Debug, Default, Component)]
+pub struct ShieldUpgrade {
+    level: usize,
+}
+
+impl ShieldUpgrade {
+    const MAX_LEVEL: usize = 10;
+    
+    pub fn level(&self) -> usize {
+        self.level
+    }
+
+    pub fn level_up(&mut self) -> bool {
+        if self.level < Self::MAX_LEVEL {
+            self.level += 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn cost(&self) -> usize {
+        (self.level + 1) * 3
+    }
+
+    pub fn get(&self) -> f32 {
+        (self.level as f32) * 10.0
+    }
+}
+
+#[derive(Debug, Default, Component)]
+pub struct AttackCooldownUpgrade {
+    level: usize,
+}
+
+impl AttackCooldownUpgrade {
+    const BASE_VALUE: f32 = 0.05;
+    const MAX_LEVEL: usize = 10;
+    
+    pub fn level(&self) -> usize {
+        self.level
+    }
+
+    pub fn level_up(&mut self) -> bool {
+        if self.level < Self::MAX_LEVEL {
+            self.level += 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn cost(&self) -> usize {
+        (self.level + 1) * 3
+    }
+
+    pub fn get(&self) -> f32 {
+        (self.level as f32) * Self::BASE_VALUE
+    }
+}
+

@@ -1,4 +1,5 @@
 pub mod behaviour;
+pub mod upgrade;
 
 use bevy::prelude::*;
 use bevy_xpbd_2d::components::{Collider, CollidingEntities, CollisionLayers, Sensor};
