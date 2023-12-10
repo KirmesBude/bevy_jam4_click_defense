@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::loading::AudioAssets;
 use crate::GameState;
 use bevy::prelude::*;
@@ -9,50 +11,38 @@ pub struct InternalAudioPlugin;
 impl Plugin for InternalAudioPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(AudioPlugin)
-            .add_systems(OnEnter(GameState::Playing), start_audio)
+            .add_systems(OnEnter(GameState::Menu), start_go_audio)
             .add_systems(
-                Update,
-                control_flying_sound
-                    /*.after(set_movement_actions)*/
-                    .run_if(in_state(GameState::Playing)),
+                OnEnter(GameState::Playing),
+                (stop_go_audio, start_game_audio).chain(),
             );
     }
 }
 
 #[derive(Resource)]
-struct FlyingAudio(Handle<AudioInstance>);
+struct GoAudio(Handle<AudioInstance>);
 
-fn start_audio(mut commands: Commands, audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
+fn start_go_audio(mut commands: Commands, audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
     audio.pause();
     let handle = audio
-        .play(audio_assets.flying.clone())
+        .play(audio_assets.go.clone())
         .looped()
-        .with_volume(0.3)
+        .with_volume(1.0)
         .handle();
-    commands.insert_resource(FlyingAudio(handle));
+
+    commands.insert_resource(GoAudio(handle));
 }
 
-fn control_flying_sound(
-    audio: Res<FlyingAudio>,
-    mut audio_instances: ResMut<Assets<AudioInstance>>,
-) {
-    if let Some(instance) = audio_instances.get_mut(&audio.0) {
-        match instance.state() {
-            PlaybackState::Paused { .. } => {
-                /*
-                if actions.player_movement.is_some() {
-                    instance.resume(AudioTween::default());
-                }
-                */
-            }
-            PlaybackState::Playing { .. } => {
-                /*
-                if actions.player_movement.is_none() {
-                    instance.pause(AudioTween::default());
-                }
-                */
-            }
-            _ => {}
-        }
+fn stop_go_audio(go_audio: Res<GoAudio>, mut audio_instances: ResMut<Assets<AudioInstance>>) {
+    if let Some(instance) = audio_instances.get_mut(&go_audio.0) {
+        instance.stop(AudioTween::linear(Duration::from_secs_f32(0.5)));
     }
+}
+
+fn start_game_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
+    audio.pause();
+    audio
+        .play(audio_assets.game.clone())
+        .looped()
+        .with_volume(1.0);
 }
