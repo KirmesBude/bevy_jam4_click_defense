@@ -19,17 +19,20 @@ impl Plugin for InternalAudioPlugin {
 #[derive(Component)]
 struct GoAudio;
 
-fn start_go_audio(mut commands: Commands, audio_assets: Res<AudioAssets>) {
-    commands.spawn((
-        AudioBundle {
-            source: audio_assets.go.clone(),
-            settings: PlaybackSettings {
-                mode: PlaybackMode::Loop,
-                ..Default::default()
+fn start_go_audio(mut commands: Commands, audio_assets: Res<AudioAssets>, mut init: Local<bool>) {
+    if !*init {
+        commands.spawn((
+            AudioBundle {
+                source: audio_assets.go.clone(),
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Loop,
+                    ..Default::default()
+                },
             },
-        },
-        GoAudio,
-    ));
+            GoAudio,
+        ));
+        *init = true;
+    }
 }
 
 fn stop_go_audio(mut commands: Commands, go_audio: Query<Entity, With<GoAudio>>) {
