@@ -50,8 +50,9 @@ bevy = { version = "0.12", default-features = false, features = [
     "tonemapping_luts",
     "default_font",
     "webgl2",
+    "bevy_audio",
+    "wav",
 ] }
-bevy_kira_audio = { version = "0.18", features = ["wav"] }
 bevy_asset_loader = { version = "0.18" }
 webbrowser = { version = "0.8", features = ["hardened"] }
 bevy_xpbd_2d = "0.3"
