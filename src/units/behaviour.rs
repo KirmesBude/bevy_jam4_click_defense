@@ -69,7 +69,7 @@ fn behaviour(
                     .unwrap()
                     .translation()
                     .truncate();
-                move_to_point(&mut velocity, &src_point, dst_point, 30.0);
+                move_to_point(&mut velocity, &src_point, dst_point, 50.0);
             }
             Behaviour::MoveAndAttack(entity) => {
                 let src_point = transforms
@@ -132,7 +132,7 @@ fn move_and_attack(
 ) {
     if !colliding_entities.contains(dst_entity) {
         let velocity_scale =
-            (src_point.distance(*dst_point).min(100.0).max(1.0) - 1.0) / 100.0 * 30.0;
+            (src_point.distance(*dst_point).min(100.0).max(1.0) - 1.0) / 100.0 * 50.0;
         move_to_point(velocity, src_point, dst_point, velocity_scale);
     }
 }

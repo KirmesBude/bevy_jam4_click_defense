@@ -121,15 +121,17 @@ fn setup_game_ui(mut commands: Commands, ui_assets: Res<UiAssets>) {
                                 ..default()
                             },
                         ))
-                        .insert(SpawnCooldownReductionButtonText);
-                    parent.spawn(TextBundle::from_section(
-                        format!("{}", 5),
-                        TextStyle {
-                            font_size: 30.0,
-                            color: Color::rgb(0.9, 0.9, 0.0),
-                            ..default()
-                        },
-                    ));
+                        .insert(SpawnCooldownReductionButtonLevelText);
+                    parent
+                        .spawn(TextBundle::from_section(
+                            format!("{}", 5),
+                            TextStyle {
+                                font_size: 30.0,
+                                color: Color::rgb(0.9, 0.9, 0.0),
+                                ..default()
+                            },
+                        ))
+                        .insert(SpawnCooldownReductionButtonCostText);
                 });
         });
 }
@@ -189,9 +191,9 @@ fn click_spawn_cooldown_reduction_button(
                     if let Ok(mut spawn_cooldown_reduction) =
                         spawn_cooldown_reduction.get_mut(entity)
                     {
-                        if gold.0 >= spawn_cooldown_reduction.cost() {
-                            gold.0 -= spawn_cooldown_reduction.cost();
-                            spawn_cooldown_reduction.level += 1;
+                        let cost = spawn_cooldown_reduction.cost();
+                        if gold.0 >= cost && spawn_cooldown_reduction.level_up() {
+                            gold.0 -= cost;
                         }
                     }
                 }
@@ -203,14 +205,31 @@ fn click_spawn_cooldown_reduction_button(
 }
 
 fn update_spawn_cooldown_reduction_button(
-    mut query: Query<&mut Text, With<SpawnCooldownReductionButtonText>>,
+    mut leveltext: Query<
+        &mut Text,
+        (
+            With<SpawnCooldownReductionButtonLevelText>,
+            Without<SpawnCooldownReductionButtonCostText>,
+        ),
+    >,
+    mut costtext: Query<
+        &mut Text,
+        (
+            With<SpawnCooldownReductionButtonCostText>,
+            Without<SpawnCooldownReductionButtonLevelText>,
+        ),
+    >,
     spawn_cooldown_reduction: Query<&SpawnCooldownReduction>,
     ally_castle: Res<AllyCastle>,
 ) {
-    for mut text in &mut query {
-        if let Some(entity) = ally_castle.0 {
-            if let Ok(spawn_cooldown_reduction) = spawn_cooldown_reduction.get(entity) {
-                text.sections[0].value = format!("{}", spawn_cooldown_reduction.level);
+    if let Some(entity) = ally_castle.0 {
+        if let Ok(spawn_cooldown_reduction) = spawn_cooldown_reduction.get(entity) {
+            for mut text in &mut leveltext {
+                text.sections[0].value = format!("{}", spawn_cooldown_reduction.level());
+            }
+
+            for mut text in &mut costtext {
+                text.sections[0].value = format!("{}", spawn_cooldown_reduction.cost());
             }
         }
     }
@@ -220,7 +239,10 @@ fn update_spawn_cooldown_reduction_button(
 struct SpawnCooldownReductionButton;
 
 #[derive(Debug, Default, Component)]
-struct SpawnCooldownReductionButtonText;
+struct SpawnCooldownReductionButtonLevelText;
+
+#[derive(Debug, Default, Component)]
+struct SpawnCooldownReductionButtonCostText;
 
 /* Castle Health, Gold, Wave */
 fn setup_resource_ui(mut commands: Commands, gold: Res<Gold>, wave: Res<Wave>) {
