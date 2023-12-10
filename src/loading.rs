@@ -27,6 +27,8 @@ pub struct AudioAssets {
     pub go: Handle<AudioSource>,
     #[asset(path = "audio/Abstraction-Three-Red-Hearts-Rumble-at-the-Gates.ogg")]
     pub game: Handle<AudioSource>,
+    #[asset(path = "audio/hit_005.ogg")]
+    pub hit: Handle<AudioSource>,
 }
 
 #[derive(AssetCollection, Resource)]

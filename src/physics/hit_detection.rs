@@ -63,11 +63,11 @@ pub struct HurtBoxBundle {
 }
 
 fn hit_detection(
-    mut hit_boxes: Query<(&ColliderParent, &CollidingEntities, &mut HitBox)>,
+    mut hit_boxes: Query<(&ColliderParent, &CollidingEntities, &mut HitBox, &AudioSink)>,
     hurt_boxes: Query<&ColliderParent, With<HurtBox>>,
     mut applyhealthdelta_evw: EventWriter<ApplyHealthDelta>,
 ) {
-    for (parent, colliding_entities, mut hitbox) in &mut hit_boxes {
+    for (parent, colliding_entities, mut hitbox, audio_sink) in &mut hit_boxes {
         let mut colliding_entities: Vec<Entity> = colliding_entities
             .iter()
             .filter_map(|entity| {
@@ -85,11 +85,14 @@ fn hit_detection(
             })
             .collect();
         if !colliding_entities.is_empty() {
-            println!(
+            info!(
                 "{:?} is colliding with the following entities: {:?}",
                 parent.get(),
                 colliding_entities
             );
+
+            audio_sink.stop();
+            audio_sink.play();
 
             applyhealthdelta_evw.send_batch(colliding_entities.iter().map(|entity| {
                 ApplyHealthDelta {

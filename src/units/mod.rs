@@ -8,7 +8,7 @@ use crate::{
     castle::{AllyCastle, Castle, EnemyCastle, SpawnUnit},
     common::attributes::Health,
     common::Faction,
-    loading::TextureAssets,
+    loading::{AudioAssets, TextureAssets},
     physics::hit_detection::{HitBox, HitBoxBundle, HitBoxKind, HurtBoxBundle},
     physics::PhysicsCollisionBundle,
     GameState,
@@ -119,6 +119,7 @@ fn spawn_protection(
     ally_castle: Res<AllyCastle>,
     enemy_castle: Res<EnemyCastle>,
     soldier_attack_speeds: Query<&AttackCooldownUpgrade, With<Castle>>,
+    audio_assets: Res<AudioAssets>,
 ) {
     for (entity, colliding_entities, faction, mut spawn_protection, mut behaviour) in &mut query {
         if spawn_protection.0.tick(time.delta()).finished() && colliding_entities.is_empty() {
@@ -174,6 +175,10 @@ fn spawn_protection(
                             })
                             .insert(AttackCooldown {
                                 timer: Timer::from_seconds(attack_speed, TimerMode::Repeating),
+                            })
+                            .insert(AudioBundle {
+                                source: audio_assets.hit.clone(),
+                                ..Default::default()
                             });
                         children.spawn(EnemyFinderBundle {
                             collider: Collider::ball(60.0),
