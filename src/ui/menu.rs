@@ -1,6 +1,7 @@
 use crate::loading::UiAssets;
 use crate::GameState;
 use bevy::prelude::*;
+use bevy_xpbd_2d::components::LinearVelocity;
 
 pub struct MenuPlugin;
 
@@ -16,7 +17,9 @@ impl Plugin for MenuPlugin {
             )
             .add_systems(OnExit(GameState::Menu), cleanup_menu)
             .add_systems(OnEnter(GameState::Instructions), setup_instructions)
-            .add_systems(OnExit(GameState::Instructions), cleanup_instructions);
+            .add_systems(OnExit(GameState::Instructions), cleanup_instructions)
+            .add_systems(OnEnter(GameState::GameOver), setup_game_over)
+            .add_systems(OnEnter(GameState::Won), setup_won);
     }
 }
 
@@ -343,5 +346,71 @@ fn setup_instructions(mut commands: Commands) {
 fn cleanup_instructions(mut commands: Commands, instructions: Query<Entity, With<Instructions>>) {
     for entity in instructions.iter() {
         commands.entity(entity).despawn_recursive();
+    }
+}
+
+fn setup_game_over(mut commands: Commands, mut velocities: Query<&mut LinearVelocity>) {
+    stop_movement(&mut velocities);
+
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                ..default()
+            },
+            Menu,
+        ))
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                "GAME OVER",
+                TextStyle {
+                    font_size: 100.0,
+                    color: Color::rgb(0.0, 0.0, 0.0),
+                    ..default()
+                },
+            ));
+        });
+}
+
+fn setup_won(mut commands: Commands, mut velocities: Query<&mut LinearVelocity>) {
+    stop_movement(&mut velocities);
+
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                ..default()
+            },
+            Menu,
+        ))
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                "YOU WON",
+                TextStyle {
+                    font_size: 100.0,
+                    color: Color::rgb(0.0, 0.0, 0.0),
+                    ..default()
+                },
+            ));
+        });
+}
+
+fn stop_movement(velocities: &mut Query<&mut LinearVelocity>) {
+    for mut velocity in velocities {
+        velocity.0 = Vec2::ZERO;
     }
 }

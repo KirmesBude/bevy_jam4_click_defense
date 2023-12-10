@@ -51,6 +51,7 @@ impl Plugin for CastlePlugin {
                     process_queue_ally_unit,
                     game_over,
                     emit_queue_enemy_unit,
+                    won,
                 )
                     .run_if(in_state(GameState::Playing)),
             );
@@ -133,7 +134,7 @@ fn spawn_enemy_castle(
                 collider: Collider::ball(127.0),
                 collisionlayers: CollisionLayers::new(
                     [Faction::Enemy.hurt_layer()],
-                    [Faction::Ally.opposite().hit_layer()],
+                    [Faction::Enemy.opposite().hit_layer()],
                 ),
                 ..Default::default()
             });
@@ -208,6 +209,20 @@ fn game_over(
         if let Ok(health) = health.get(entity) {
             if health.current == 0.0 {
                 next_state.set(GameState::GameOver);
+            }
+        }
+    }
+}
+
+fn won(
+    health: Query<&Health>,
+    enemy_castle: Res<EnemyCastle>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if let Some(entity) = enemy_castle.0 {
+        if let Ok(health) = health.get(entity) {
+            if health.current == 0.0 {
+                next_state.set(GameState::Won);
             }
         }
     }

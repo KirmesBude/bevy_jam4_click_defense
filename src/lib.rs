@@ -40,6 +40,8 @@ enum GameState {
     Instructions,
     // GameOver
     GameOver,
+    // Won
+    Won,
 }
 
 pub struct GamePlugin;
