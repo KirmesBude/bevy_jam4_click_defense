@@ -1,3 +1,4 @@
+use crate::castle::spawner::Wave;
 use crate::loading::UiAssets;
 use crate::GameState;
 use bevy::prelude::*;
@@ -351,15 +352,21 @@ fn cleanup_instructions(mut commands: Commands, instructions: Query<Entity, With
     }
 }
 
-fn setup_game_over(mut commands: Commands, mut velocities: Query<&mut LinearVelocity>) {
+fn setup_game_over(
+    mut commands: Commands,
+    mut velocities: Query<&mut LinearVelocity>,
+    wave: Res<Wave>,
+) {
     stop_movement(&mut velocities);
 
     commands
         .spawn((
             NodeBundle {
                 style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
+                    width: Val::Percent(60.0),
+                    height: Val::Percent(80.0),
+                    top: Val::Percent(10.0),
+                    left: Val::Percent(20.0),
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
@@ -371,7 +378,10 @@ fn setup_game_over(mut commands: Commands, mut velocities: Query<&mut LinearVelo
         ))
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "GAME OVER",
+                format!(
+                    "GAME OVER\nYour castle was destroyed in wave {}!",
+                    wave.level
+                ),
                 TextStyle {
                     font_size: 100.0,
                     color: Color::rgb(0.0, 0.0, 0.0),
@@ -381,15 +391,17 @@ fn setup_game_over(mut commands: Commands, mut velocities: Query<&mut LinearVelo
         });
 }
 
-fn setup_won(mut commands: Commands, mut velocities: Query<&mut LinearVelocity>) {
+fn setup_won(mut commands: Commands, mut velocities: Query<&mut LinearVelocity>, wave: Res<Wave>) {
     stop_movement(&mut velocities);
 
     commands
         .spawn((
             NodeBundle {
                 style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
+                    width: Val::Percent(60.0),
+                    height: Val::Percent(80.0),
+                    top: Val::Percent(10.0),
+                    left: Val::Percent(20.0),
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
@@ -401,7 +413,10 @@ fn setup_won(mut commands: Commands, mut velocities: Query<&mut LinearVelocity>)
         ))
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "YOU WON",
+                format!(
+                    "YOU WON\nYou destroyed the enemy castle in wave {}!",
+                    wave.level
+                ),
                 TextStyle {
                     font_size: 100.0,
                     color: Color::rgb(0.0, 0.0, 0.0),
