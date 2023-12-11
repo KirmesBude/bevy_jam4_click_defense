@@ -1,9 +1,9 @@
 use crate::{
     castle::{
-        spawner::Wave, upgrade::SpawnCooldownReduction, AllyCastle, Castle, Gold, QueueAllyUnit,
-        SpawnQueue,
+        spawner::Wave, upgrade::SpawnCooldownReduction, AllyCastle, Castle, EnemyCastle, Gold,
+        QueueAllyUnit, SpawnQueue,
     },
-    common::attributes::Health,
+    common::{attributes::Health, Faction},
     loading::UiAssets,
     units::{
         upgrade::{AttackCooldownUpgrade, ShieldUpgrade},
@@ -21,7 +21,7 @@ impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             OnEnter(GameState::Playing),
-            (setup_game_ui, setup_resource_ui),
+            (setup_game_ui, setup_resource_ui, setup_health_ui),
         )
         .add_systems(
             Update,
@@ -87,7 +87,7 @@ fn setup_game_ui(mut commands: Commands, ui_assets: Res<UiAssets>) {
                             format!("{}", 0),
                             TextStyle {
                                 font_size: 30.0,
-                                color: Color::rgb(0.9, 0.9, 0.9),
+                                color: Color::rgb(0.0, 0.0, 0.0),
                                 ..default()
                             },
                         ))
@@ -124,7 +124,7 @@ fn setup_game_ui(mut commands: Commands, ui_assets: Res<UiAssets>) {
                             format!("{}", 0),
                             TextStyle {
                                 font_size: 30.0,
-                                color: Color::rgb(0.9, 0.9, 0.9),
+                                color: Color::rgb(0.0, 0.0, 0.0),
                                 ..default()
                             },
                         ))
@@ -163,7 +163,7 @@ fn setup_game_ui(mut commands: Commands, ui_assets: Res<UiAssets>) {
                             format!("{}", 0),
                             TextStyle {
                                 font_size: 30.0,
-                                color: Color::rgb(0.9, 0.9, 0.9),
+                                color: Color::rgb(0.0, 0.0, 0.0),
                                 ..default()
                             },
                         ),
@@ -204,7 +204,7 @@ fn setup_game_ui(mut commands: Commands, ui_assets: Res<UiAssets>) {
                             format!("{}", 0),
                             TextStyle {
                                 font_size: 30.0,
-                                color: Color::rgb(0.9, 0.9, 0.9),
+                                color: Color::rgb(0.0, 0.0, 0.0),
                                 ..default()
                             },
                         ),
@@ -333,13 +333,14 @@ struct SpawnCooldownReductionButtonLevelText;
 #[derive(Debug, Default, Component)]
 struct SpawnCooldownReductionButtonCostText;
 
-/* Castle Health, Gold, Wave */
+/* Gold, Wave */
 fn setup_resource_ui(mut commands: Commands, gold: Res<Gold>, wave: Res<Wave>) {
     commands
         .spawn((NodeBundle {
             style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Percent(10.0),
+                width: Val::Percent(98.0),
+                height: Val::Percent(5.0),
+                left: Val::Percent(1.0),
                 flex_direction: FlexDirection::Row,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::SpaceBetween,
@@ -361,17 +362,6 @@ fn setup_resource_ui(mut commands: Commands, gold: Res<Gold>, wave: Res<Wave>) {
             ));
             children.spawn((
                 TextBundle::from_section(
-                    format!("CastleHealth:{}", 0),
-                    TextStyle {
-                        font_size: 40.0,
-                        color: Color::rgb(0.9, 0.0, 0.9),
-                        ..default()
-                    },
-                ),
-                CastleHealthUi,
-            ));
-            children.spawn((
-                TextBundle::from_section(
                     format!("Wave:{}", wave.level),
                     TextStyle {
                         font_size: 40.0,
@@ -384,14 +374,56 @@ fn setup_resource_ui(mut commands: Commands, gold: Res<Gold>, wave: Res<Wave>) {
         });
 }
 
+/* Castle Health */
+fn setup_health_ui(mut commands: Commands) {
+    commands
+        .spawn((NodeBundle {
+            style: Style {
+                width: Val::Percent(98.0),
+                height: Val::Percent(5.0),
+                left: Val::Percent(1.0),
+                top: Val::Percent(95.0),
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceBetween,
+                ..default()
+            },
+            ..default()
+        },))
+        .with_children(|children| {
+            children.spawn((
+                TextBundle::from_section(
+                    format!("{}", 0),
+                    TextStyle {
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.0, 0.9),
+                        ..default()
+                    },
+                ),
+                CastleHealthUi(Faction::Ally),
+            ));
+            children.spawn((
+                TextBundle::from_section(
+                    format!("{}", 0),
+                    TextStyle {
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.0, 0.9),
+                        ..default()
+                    },
+                ),
+                CastleHealthUi(Faction::Enemy),
+            ));
+        });
+}
+
 #[derive(Debug, Default, Component)]
 struct GoldUi;
 
 #[derive(Debug, Default, Component)]
 struct WaveUi;
 
-#[derive(Debug, Default, Component)]
-struct CastleHealthUi;
+#[derive(Debug, Component)]
+struct CastleHealthUi(Faction);
 
 fn update_gold_ui(mut gold_uis: Query<&mut Text, With<GoldUi>>, gold: Res<Gold>) {
     for mut text in &mut gold_uis {
@@ -406,13 +438,17 @@ fn update_wave_ui(mut wave_uis: Query<&mut Text, With<WaveUi>>, wave: Res<Wave>)
 }
 
 fn update_castle_health_ui(
-    mut castle_health_uis: Query<&mut Text, With<CastleHealthUi>>,
+    mut castle_health_uis: Query<(&mut Text, &CastleHealthUi)>,
     ally_castle: Res<AllyCastle>,
+    enemy_castle: Res<EnemyCastle>,
     castle_healths: Query<&Health, With<Castle>>,
 ) {
-    if let Some(entity) = ally_castle.0 {
-        if let Ok(health) = castle_healths.get(entity) {
-            for mut text in &mut castle_health_uis {
+    for (mut text, castle_health_ui) in &mut castle_health_uis {
+        if let Some(entity) = match castle_health_ui.0 {
+            Faction::Ally => ally_castle.0,
+            Faction::Enemy => enemy_castle.0,
+        } {
+            if let Ok(health) = castle_healths.get(entity) {
                 text.sections[0].value = format!("{}", health);
             }
         }
