@@ -288,7 +288,7 @@ fn setup_instructions(mut commands: Commands) {
         ))
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "Destroy the enemy castle to your right.\nClick any of the buttons on the left side.\nEach button displays information in the top left (like level or how many units are queued up) and the cost in the top right.\nFrom top to bottom: Queue up a soldier, upgrade spawn interval, upgrade Shield, upgrade attack.",
+                "Destroy the enemy castle to your right.\nClick any of the buttons on the left side.\nEach button displays information in the top left (like level or how many units are queued up) and the cost in the top right.\nFrom top to bottom: Queue up a soldier, upgrade spawn interval, upgrade Shield, upgrade attack.\nUpgrades go up to level 10.",
                 TextStyle {
                     font_size: 40.0,
                     color: Color::rgb(0.9, 0.9, 0.9),
