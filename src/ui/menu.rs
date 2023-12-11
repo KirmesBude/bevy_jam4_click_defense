@@ -273,8 +273,10 @@ fn setup_instructions(mut commands: Commands) {
         .spawn((
             NodeBundle {
                 style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
+                    width: Val::Percent(90.0),
+                    height: Val::Percent(90.0),
+                    top: Val::Percent(5.0),
+                    left: Val::Percent(5.0),
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
@@ -286,7 +288,7 @@ fn setup_instructions(mut commands: Commands) {
         ))
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "Lenghty Instructions",
+                "Destroy the enemy castle to your right.\nClick any of the buttons on the left side.\nEach button displays information in the top left (like level or how many units are queued up) and the cost in the top right.\nFrom top to bottom: Queue up a soldier, upgrade spawn interval, upgrade Shield, upgrade attack.",
                 TextStyle {
                     font_size: 40.0,
                     color: Color::rgb(0.9, 0.9, 0.9),
