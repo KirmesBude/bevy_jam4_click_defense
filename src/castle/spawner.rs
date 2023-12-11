@@ -30,7 +30,7 @@ impl Default for Wave {
     fn default() -> Self {
         Self {
             level: 1,
-            timer: Timer::from_seconds(10.0, TimerMode::Repeating),
+            timer: Timer::from_seconds(5.0, TimerMode::Repeating),
         }
     }
 }
@@ -60,7 +60,7 @@ fn tick_wave_timer(
 
                 wave.level += 1;
 
-                if wave.level % 3 == 0 {
+                if wave.level % 2 == 0 {
                     spawn_cooldown.level_up();
                     spawn_cooldown.level_up();
                     shield.level_up();
